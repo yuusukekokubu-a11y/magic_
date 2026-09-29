@@ -152,6 +152,7 @@ button:focus-visible, input:focus-visible{ outline:2px solid var(--brass); outli
 .hero p.lead{ color:var(--muted); margin:10px auto 26px; max-width:32em; }
 .sky{ font-size:13px; color:var(--star); letter-spacing:.9em; margin-bottom:18px; }
 .namef{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.namef select{ font:inherit; padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:var(--panel); color:var(--ink); }
 .namef input{ font:inherit; padding:9px 14px; border-radius:10px; border:1px solid var(--line); background:var(--panel); color:var(--ink); width:12em; }
 .reveal{ text-align:left; }
 .reveal .big{ font-family:"Shippori Mincho B1",serif; font-size:34px; font-weight:800; color:var(--brass); }
@@ -267,6 +268,7 @@ details summary{ cursor:pointer; color:var(--ink); }
 .growth{ font-size:12px; color:var(--muted); margin-top:4px; }
 .growth b{ color:var(--brass); }
 .sptbl tr.cur td{ background:var(--brass-soft); font-weight:700; }
+.gradbadge{ display:inline-block; font-size:11px; font-weight:700; color:var(--danger); border:1px solid currentColor; border-radius:6px; padding:0 6px; margin-left:4px; }
 .evbadge{ display:inline-block; font-size:11px; font-weight:700; color:var(--brass); border:1px solid var(--brass); border-radius:6px; padding:0 6px; margin-left:4px; }
 .badge.rare{ color:#fff; background:var(--brass); border-color:var(--brass); }
 /* ステータス変化の演出 */
@@ -516,7 +518,7 @@ const COMMON_PASSIVES = ['focus', 'guts', 'flow', 'wall', 'adversity', 'hard', '
 // 人物は2つのグループに分かれる（GROUPS）。
 //   star  … 五星（いつつぼし）：各属性に1人ずつの同級生。絆100で1人だけ「盟友」になれる。卒業大会の決勝の相手にもなる
 //   event … イベント：先輩・後輩・先生。盟友にはなれない代わりに、1回の交流で伸びるステータスが多く、絆100で餞別をくれる
-// kind＝立場（同級生/先輩/後輩/先生）、fromMonth＝会えるようになる月（後輩は2年目から）
+// kind＝立場（同級生/先輩/後輩/先生）、fromMonth＝会えるようになる月（後輩は2年目から）、untilMonth＝在籍する最後の月（先輩は2年目で卒業）
 const GROUPS = {
   star: { n: '五星', d: '盟友候補の同級生' },
   event: { n: 'イベント', d: '先輩・後輩・先生' },
@@ -560,14 +562,14 @@ const CHARS = {
     secret: '「これぞ深淵の秘術……貴様にだけ、見せてやるのだ」',
     retry: '「フッ、先日の続きなのだ。今度こそ、闇を受け入れよ」' },
   // ---------- イベント（先輩・後輩・先生） ----------
-  celia: { group: 'event', seal: 'seal_celia', kind: '先輩', busy: { week: 1, reason: '生徒会の定例会議' }, absent: ['来客の対応に追われている', '王都の実家に呼び出された'],
+  celia: { group: 'event', seal: 'seal_celia', kind: '先輩', untilMonth: 24, busy: { week: 1, reason: '生徒会の定例会議' }, absent: ['来客の対応に追われている', '王都の実家に呼び出された'],
     where: ['生徒会室', '図書館の窓際の席', '学院の温室', '夕暮れの時計塔'], n: 'セリア先輩', sex: '女', first: '私', tone: '面倒見のいいお姉さん。語尾は「〜わ」「〜かしら」', role: '生徒会長の先輩', el: 'light', stat: 'acc', p40: 'charm',
     talk: ['「生徒会の仕事、手伝ってくれて助かるわ。ありがとう」', '「焦らないで。魔法は心で編むものよ」', '「ふふ、その杖の持ち方、昔の私にそっくりね」', '「たまには息抜きも大事よ。紅茶はいかが？」'],
     b40: '「あなたになら教えてもいいかしら。人と仲良くなる、ちょっとしたコツ」',
     secret: '「これは代々の生徒会長だけに伝わる光の魔法。あなたに託すわ」',
     retry: '「この前の続き、もう一度やってみましょう。大丈夫、あなたならできるわ」',
     farewell: '「私が卒業しても、あなたならきっと大丈夫。……先輩として、誇りに思うわ」' },
-  garde: { group: 'event', seal: 'seal_garde', kind: '先輩', busy: { week: 2, reason: '決闘部の対外試合' }, absent: ['裏山でひとり修行している', '後輩たちの稽古をつけている'],
+  garde: { group: 'event', seal: 'seal_garde', kind: '先輩', untilMonth: 24, busy: { week: 2, reason: '決闘部の対外試合' }, absent: ['裏山でひとり修行している', '後輩たちの稽古をつけている'],
     where: ['決闘部の道場', '演習場の隅', '学院の城壁の上', '裏山の岩場'], n: 'ガルド先輩', sex: '男', first: '自分', tone: '寡黙で言葉少な。「……」から話し始め、短く言い切る', role: '決闘部部長の先輩', el: 'wood', stat: 'def', p40: 'bulwark',
     talk: ['「……撃て。受けてやる」', '「……自分は、守ることしかできん」', '「……悪くない。……続けろ」', '「……腹が減っては、盾は持てん。……食え」'],
     b40: '「……お前には、見せてもいい。自分の構えを」',
@@ -768,11 +770,11 @@ function cmdEvents(s, kind, stat) {
   const extra = (k, v) => k === 'hp' ? v * 3 : v;
   const pool = {
     train: [
-      () => mkEvent('セリア先輩の見回り', `生徒会の見回りでセリア先輩が通りかかった。\nセリア先輩：「あら、熱心ね。少しだけフォームを見てあげましょうか？」`, [
+      () => !isUnlocked(s, 'celia') ? null : mkEvent('セリア先輩の見回り', `生徒会の見回りでセリア先輩が通りかかった。\nセリア先輩：「あら、熱心ね。少しだけフォームを見てあげましょうか？」`, [
         { label: '素直に教わる', hint: '精度+2・セリアとの絆+5', fn: s => { gain(s, 'acc', 2); addBond(s, 'celia', 5); return 'セリア先輩：「そう、肩の力を抜いて。……ほら、ずっと良くなったわ」'; } },
         { label: '「大丈夫です」と答える', hint: `${sn}+${extra(stat, 1)}`, fn: s => { gain(s, stat, extra(stat, 1)); return 'セリア先輩：「ふふ、頼もしいわね。頑張って」'; } },
       ]),
-      () => mkEvent('ガルドの的役', `演習場の隅で、ガルド先輩が腕を組んでいる。\nガルド：「……的が要るなら、自分がなる」`, [
+      () => !isUnlocked(s, 'garde') ? null : mkEvent('ガルドの的役', `演習場の隅で、ガルド先輩が腕を組んでいる。\nガルド：「……的が要るなら、自分がなる」`, [
         { label: '全力で撃ち込む', hint: '魔法攻撃+2・ガルドとの絆+5・疲労+6', fn: s => { gain(s, 'atk', 2); addBond(s, 'garde', 5); fat(s, 6); return 'ガルド：「……いい威力だ。……もっと来い」'; } },
         { label: '受け方を教わる', hint: '魔法防御+2・ガルドとの絆+5', fn: s => { gain(s, 'def', 2); addBond(s, 'garde', 5); return 'ガルド：「……足で受けろ。……そうだ」'; } },
       ]),
@@ -991,7 +993,8 @@ function rollAvailability(s) {
   for (const k of Object.keys(CHARS)) {
     const c = CHARS[k]; let reason = null;
     const inSpecial = sp && av.special && av.special[sp.id];   // 特別期間中は、参加者の決まった予定はなし（みな合宿所にいる）
-    if (!isUnlocked(s, k)) reason = `${c.fromMonth > 12 ? Math.ceil(c.fromMonth / 12) + '年目' : ''}から登場`;
+    if (isGraduated(s, k)) reason = '卒業した';
+    else if (!isUnlocked(s, k)) reason = `${c.fromMonth > 12 ? Math.ceil(c.fromMonth / 12) + '年目' : ''}から登場`;
     else if (inSpecial && !av.special[sp.id].includes(k) && s.partner !== k) reason = `${sp.name}には来ていない`;
     else if (!inSpecial && c.busy && c.busy.week === w) reason = c.busy.reason;
     else if (rnd() < (s.partner === k ? av.partnerRate : (c.absentRate != null ? c.absentRate : av.rate))) { reason = pick(c.absent); randomAbsent.push(k); }
@@ -1025,14 +1028,20 @@ function lockNotice(s, cid, lv) {
 }
 // 盟友になれる相手か（五星のみ）
 function canPartner(cid) { return CHARS[cid].group === 'star'; }
-// もう出会っているか（後輩は2年目から）
-function isUnlocked(s, cid) { const m = CHARS[cid].fromMonth; return !m || monthIdx(s.turn) >= m; }
+// もう卒業したか（untilMonth の月が終わったら卒業。以後は交流・イベントに出てこない）
+function isGraduated(s, cid) { const u = CHARS[cid].untilMonth; return !!u && monthIdx(s.turn) > u; }
+// 卒業までの残り月数（今月を含む）。卒業予定がなければ null
+function gradLeft(s, cid) { const u = CHARS[cid].untilMonth; return u ? u - monthIdx(s.turn) + 1 : null; }
+const GRAD_WARN = 3;   // 残りこの月数以内で「まもなく卒業」を表示
+// いま学院にいるか（後輩は2年目から、先輩は卒業まで）
+function isUnlocked(s, cid) { const m = CHARS[cid].fromMonth; return (!m || monthIdx(s.turn) >= m) && !isGraduated(s, cid); }
 // 今週交流できる相手
-function socialTargets(s) { return Object.keys(CHARS).filter(k => !(s.absent && s.absent[k])); }
+function socialTargets(s) { return Object.keys(CHARS).filter(k => isUnlocked(s, k) && !(s.absent && s.absent[k])); }
 // 交流相手の選択画面に出す「次に起きること」
 function bondNext(s, cid) {
   const b = s.bonds[cid], c = CHARS[cid], star = c.group === 'star';
   if (s.partner === cid) return '盟友';
+  if (isGraduated(s, cid)) return '🎓 卒業した';
   const li = lockInfo(s, cid);
   if (li) return `🔒 ${STAT_NAME[li.stat]}が${li.need}になると関係が深まる（いま${li.cur}）`;
   const f = s.flags;
@@ -1337,7 +1346,7 @@ function charEvents(s) {
         { label: 'ミルクをあげる', hint: '調子↑・次にノワールを追う時の成功率+20%', fn: s => { s.cond = Math.min(4, s.cond + 1); s.flags.noirFed = 1; return '黒猫は満足そうに喉を鳴らし、どこかへ消えた。'; } },
       ], { big: true }); },
   };
-  const avail = Object.keys(E).filter(k => !f['ce_' + k] || t - f['ce_' + k] >= 3);
+  const avail = Object.keys(E).filter(k => (!CHARS[k] || isUnlocked(s, k)) && (!f['ce_' + k] || t - f['ce_' + k] >= 3));   // 卒業した人・まだいない人のイベントは出さない
   if (!avail.length) return null;
   const k = pick(avail); const ev = E[k]();
   if (ev) f['ce_' + k] = t;
@@ -1852,7 +1861,7 @@ function setScenario(id) {
 }
 setScenario('main');
 
-if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, ORIGINS, newStudent, doTrain, doResearch, doSocial, doRest, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, STAR_EVENTS, starEvent, GROUPS, EVENT_GAIN, bondNext, CHAR_STORY, applyFx, fxHint, CHARS, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
+if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, ORIGINS, newStudent, doTrain, doResearch, doSocial, doRest, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, STAR_EVENTS, starEvent, GROUPS, EVENT_GAIN, bondNext, CHAR_STORY, applyFx, fxHint, CHARS, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
 
 </script>
 <script>
@@ -1934,13 +1943,15 @@ function affChips(s) {
 function chooseSocial() {
   if (BUSY) return;
   const card = k => { const c = CHARS[k]; const b = S.bonds[k]; const away = S.absent && S.absent[k];
-    const due = milestoneDue(S, k);
+    const due = milestoneDue(S, k); const left = gradLeft(S, k);
     return `<button class="scard ${S.partner === k ? 'partner' : ''} ${away ? 'away' : ''}" ${away ? 'disabled aria-disabled="true"' : `data-soc="${k}"`}>
       <div>${elChip(c.el)} <b>${c.n}</b>${due ? ` <span class="evbadge">✨ 絆${due}の出来事</span>` : ''} <span class="sex ${c.sex === '男' ? 'm' : 'f'}">${c.sex === '男' ? '♂' : '♀'}</span> <span class="kind">${c.kind}</span>${S.partner === k ? ' <b class="pbadge">盟友</b>' : ''}</div>
       <div class="note">${c.role}・${STAT_NAME[c.stat]}が伸びる${c.group === 'event' ? '（多め）' : ''}</div>
+      ${left && left <= GRAD_WARN ? `<div><span class="gradbadge" style="margin-left:0">🎓 まもなく卒業（残り${left}ヶ月）</span></div>` : ''}
       <div class="sbar"><div class="bar"><span style="width:${b}%"></span></div><span>${b}</span></div>
       <div class="snext">${away ? `今週は不在：${esc(away)}` : esc(bondNext(S, k))}</div></button>`; };
-  const sec = g => `<h3 class="ghead">${GROUPS[g].n}<span class="note">（${GROUPS[g].d}）</span></h3><div class="sgrid">${Object.keys(CHARS).filter(k => CHARS[k].group === g).map(card).join('')}</div>`;
+  const sec = g => { const ks = Object.keys(CHARS).filter(k => CHARS[k].group === g && !isGraduated(S, k));   // 卒業した人は一覧に出さない
+    return ks.length ? `<h3 class="ghead">${GROUPS[g].n}<span class="note">（${GROUPS[g].d}）</span></h3><div class="sgrid">${ks.map(card).join('')}</div>` : ''; };
   openModal(`<div class="pop"><div class="kicker">交流</div><h2>誰と過ごす？</h2>
     <p class="txt">今週会えるのは${socialTargets(S).length}人。五星との絆は、交流よりも日々の出来事で深まります。絆100で、五星のうち1人と盟友になれます。絆の節目（✨）の出来事は、その人と交流したときに起きます。</p>
     ${sec('star')}${sec('event')}<div class="row"><button class="btn" id="socCancel">やめる</button></div></div>`);
@@ -1980,6 +1991,8 @@ function renderTitle() {
     <h1>星見の魔法学院</h1>
     <p class="lead">三年間、百四十四の週。授業・研究・交流・休息を選び、卒業大会で頂点を目指す魔法使いを育てよう。出自も習得魔法も、毎回ちがう。</p>
     <div class="namef">
+      <label for="sc" class="note" style="align-self:center">シナリオ</label>
+      <select id="sc">${Object.values(SCENARIOS).map(x => `<option value="${esc(x.id)}" ${SC && SC.id === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
       <label for="nm" class="note" style="align-self:center">生徒の名前</label>
       <input id="nm" maxlength="10" value="アルト">
       <button class="btn main" id="go">入学する</button>
@@ -1991,7 +2004,8 @@ function renderTitle() {
       <p>属性には相性があります（火→木→水→火、光と闇は互いに弱点）。試験の前に対戦相手が発表されるので、有利な魔法を用意して挑みましょう。</p>
     </details>
   </div></section>`;
-  $('#go').onclick = () => { const n = $('#nm').value.trim() || 'アルト'; SHOWN = null; S = newStudent(n); TURNLOG = []; renderReveal(); };
+  // 選んだシナリオに切り替えてから生徒を作る（週数・試験・イベントはシナリオが決める）
+  $('#go').onclick = () => { const n = $('#nm').value.trim() || 'アルト'; setScenario($('#sc').value); SHOWN = null; S = newStudent(n); TURNLOG = []; renderReveal(); };
   $('#nm').onkeydown = e => { if (e.key === 'Enter') $('#go').click(); };
 }
 
@@ -2192,7 +2206,7 @@ function tabBody() {
     <h3 style="margin:18px 0 8px;font-size:15px">絆</h3>
     ${['star', 'event'].map(g => `<h3 class="ghead">${GROUPS[g].n}<span class="note">（${GROUPS[g].d}）</span></h3>` + Object.entries(CHARS).filter(([, c]) => c.group === g).map(([k, c]) => `<div class="bond"><span>${c.n} <span class="sex ${c.sex === '男' ? 'm' : 'f'}" title="${c.sex}性">${c.sex === '男' ? '♂' : '♀'}</span></span><div class="bar"><span style="width:${s.bonds[k]}%"></span></div><span class="note">${s.bonds[k]}</span></div>
       <div class="note" style="margin:-2px 0 2px">${c.role}（${ELEM[c.el].n}）</div>
-      <div class="note" style="margin:0 0 8px">${s.partner === k ? '<b class="pbadge">盟友</b> ' : ''}次：${bondNext(s, k)}<br>${s.absent && s.absent[k] ? `<span class="awaytxt">今週は不在（${esc(s.absent[k])}）</span>` : '<span class="heretxt">今週は会える</span>'}${c.busy ? `・毎月第${c.busy.week}週は不在${s.absent && s.absent[k] === c.busy.reason ? '' : `（${c.busy.reason}）`}` : ''}${c.absentRate && c.absentRate > 0.3 ? '・よく姿を消す' : ''}</div>`).join('')).join('')}
+      <div class="note" style="margin:0 0 8px">${s.partner === k ? '<b class="pbadge">盟友</b> ' : ''}次：${bondNext(s, k)}<br>${isGraduated(s, k) ? '<span class="awaytxt">🎓 卒業した</span>' : s.absent && s.absent[k] ? `<span class="awaytxt">今週は不在（${esc(s.absent[k])}）</span>` : '<span class="heretxt">今週は会える</span>'}${gradLeft(s, k) && gradLeft(s, k) > 0 && gradLeft(s, k) <= GRAD_WARN ? `・<span class="gradbadge">🎓 まもなく卒業（残り${gradLeft(s, k)}ヶ月）</span>` : c.untilMonth && !isGraduated(s, k) ? `・${Math.ceil(c.untilMonth / 12)}年目の終わりに卒業` : ''}${!isGraduated(s, k) && c.busy ? `・毎月第${c.busy.week}週は不在${s.absent && s.absent[k] === c.busy.reason ? '' : `（${c.busy.reason}）`}` : ''}${c.absentRate && c.absentRate > 0.3 ? '・よく姿を消す' : ''}</div>`).join('')).join('')}
     <p class="note">絆が20・40・60・80・100に届いたあと、その人と交流すると、物語や特性・秘伝魔法の習得が起きます（✨が目印）。絆は100で最大です。絆40・80から先へ進むには、その人の得意な能力を鍛える必要があります。足りないあいだは、絆がそこで止まります（🔒）。五星との絆は日々の出来事で大きく深まり、絆100で1人と盟友になれます。イベントの人物は盟友になれませんが、交流で伸びるステータスが多めで、絆100で特別な餞別をくれます。</p>
 `;
 }
