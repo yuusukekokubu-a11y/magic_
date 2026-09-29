@@ -1,0 +1,2406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>星見の魔法学院 ― 三年間の育成記録</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eeeaf6; --panel:#faf8fe; --panel2:#f1edf9; --ink:#251f45; --muted:#6a6290; --line:#d8d0ea;
+  --brass:#936a1c; --brass-soft:#f3e6c8; --danger:#c24a33; --ok:#2f8a63; --star:#b7892f;
+  --shadow:0 1px 0 rgba(37,31,69,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1b1735; --panel:#252048; --panel2:#2d2755; --ink:#ece6f9; --muted:#a79ecb; --line:#3b3468;
+    --brass:#d6ae5c; --brass-soft:#3b3152; --danger:#ea7a60; --ok:#6cc79c; --star:#f0cf7c; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1b1735; --panel:#252048; --panel2:#2d2755; --ink:#ece6f9; --muted:#a79ecb; --line:#3b3468;
+  --brass:#d6ae5c; --brass-soft:#3b3152; --danger:#ea7a60; --ok:#6cc79c; --star:#f0cf7c; --shadow:none;
+}
+:root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+*,*::before,*::after{ box-sizing:inherit; }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif; font-size:15px; line-height:1.7; }
+h1,h2,h3{ font-family:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif; }
+button{ font:inherit; color:inherit; cursor:pointer; }
+button:focus-visible, input:focus-visible{ outline:2px solid var(--brass); outline-offset:2px; }
+.wrap{ max-width:1120px; margin:0 auto; padding:16px 16px 40px; }
+
+/* header */
+.top{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:8px 20px; margin-bottom:14px; }
+.top h1{ margin:0; font-size:22px; letter-spacing:.06em; font-weight:800; }
+.when{ font-family:"Shippori Mincho B1",serif; font-size:28px; font-weight:800; line-height:1; }
+.when small{ font-size:14px; color:var(--muted); font-weight:600; margin-left:8px; }
+
+/* constellation track */
+.track{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px 16px; margin-bottom:16px; box-shadow:var(--shadow); }
+.yr{ display:grid; grid-template-columns:56px 1fr; align-items:center; gap:8px; }
+.yr + .yr{ margin-top:4px; }
+.yr > span{ font-size:12px; color:var(--muted); }
+.dots{ display:flex; align-items:center; gap:0; position:relative; }
+.dots::before{ content:""; position:absolute; left:4px; right:14px; top:50%; height:1px; background:var(--line); }
+.tk{ position:relative; flex:1; display:flex; justify-content:center; }
+.tk i{ width:8px; height:8px; border-radius:50%; background:var(--panel); border:1px solid var(--muted); display:block; }
+.tk.done i{ background:var(--muted); }
+.tk.now i{ width:12px; height:12px; background:var(--star); border-color:var(--star); box-shadow:0 0 0 4px color-mix(in srgb,var(--star) 25%,transparent); }
+.tk.camp i{ border-color:var(--brass); border-width:2px; }
+.tk em{ position:absolute; top:calc(100% + 1px); font-style:normal; font-size:10px; color:var(--star); white-space:nowrap; font-weight:700; }
+.yr + .yr{ margin-top:8px; }
+.when .wk{ font-size:18px; margin-left:8px; }
+.campbar{ margin-top:14px; background:var(--brass-soft); color:var(--brass); border-radius:10px; padding:6px 12px; font-size:13px; font-weight:700; }
+.prog{ display:block; height:4px; background:var(--panel); border-radius:99px; margin:4px 8px 0; overflow:hidden; }
+.prog span{ display:block; height:100%; background:var(--brass); }
+.tk.exam{ flex:0 0 auto; margin-left:6px; }
+.tk.exam b{ font-size:18px; line-height:1; color:var(--muted); }
+.tk.exam.won b{ color:var(--star); }
+.tk.exam.lost b{ color:var(--danger); opacity:.7; }
+.tk.exam em{ position:absolute; top:100%; font-style:normal; font-size:10px; color:var(--muted); white-space:nowrap; }
+
+.grid{ display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr); gap:16px; align-items:start; }
+@media (max-width:820px){ .grid{ grid-template-columns:1fr; } }
+.panel{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow); }
+
+/* student card */
+.who{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.who h2{ margin:0; font-size:24px; font-weight:800; }
+.tag{ display:inline-block; font-size:12px; padding:1px 9px; border-radius:99px; border:1px solid var(--line); color:var(--muted); margin-right:4px; }
+.tag.origin{ border-color:var(--brass); color:var(--brass); }
+.el{ display:inline-block; font-size:12px; font-weight:700; padding:0 7px; border-radius:6px; color:#fff; }
+.stats{ margin:14px 0 10px; display:grid; gap:7px; }
+.st{ display:grid; grid-template-columns:5.5em 1.6em 3em 1fr; align-items:center; gap:8px; font-size:14px; }
+.st .g{ font-family:"Shippori Mincho B1",serif; font-weight:800; font-size:18px; text-align:center; color:var(--brass); }
+.st .v{ text-align:right; font-variant-numeric:tabular-nums; }
+.bar{ height:6px; background:var(--panel2); border-radius:99px; overflow:hidden; }
+.bar > span{ display:block; height:100%; background:var(--brass); border-radius:99px; transition:width .4s; }
+.meta{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px; font-size:13px; }
+.meta .k{ color:var(--muted); display:block; font-size:12px; }
+.meta strong{ font-size:16px; }
+.fat .bar > span{ background:var(--ok); }
+.fat.warn .bar > span{ background:#d19a2e; }
+.fat.bad .bar > span{ background:var(--danger); }
+
+/* commands */
+.cmds h3{ margin:18px 0 8px; font-size:15px; }
+.lessons{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.lessons button{ background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:8px 2px; font-size:13px; line-height:1.3; }
+.lessons button small{ display:block; font-size:10px; color:var(--muted); }
+.others{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:6px; }
+.others button{ background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:10px 4px; font-weight:700; line-height:1.3; }
+.others button small{ display:block; font-weight:400; font-size:11px; color:var(--muted); }
+.lessons button:hover,.others button:hover{ border-color:var(--brass); }
+.risk{ font-size:12px; color:var(--muted); margin-top:8px; min-height:1.4em; }
+.risk.hot{ color:var(--danger); font-weight:700; }
+
+/* tabs */
+.tabs{ display:flex; gap:4px; border-bottom:1px solid var(--line); margin:-4px -4px 12px; padding:0 4px; }
+.tabs button{ background:none; border:none; padding:8px 12px; border-bottom:2px solid transparent; color:var(--muted); font-weight:700; }
+.tabs button[aria-selected="true"]{ color:var(--ink); border-color:var(--brass); }
+.log{ max-height:560px; overflow:auto; }
+.turnlog{ padding:8px 0; border-bottom:1px dashed var(--line); }
+.turnlog h4{ margin:0 0 2px; font-size:12px; color:var(--muted); font-weight:500; }
+.turnlog p{ margin:0; font-size:14px; white-space:pre-line; }
+.turnlog p.ev{ color:var(--brass); }
+.turnlog p.bad{ color:var(--danger); }
+.turnlog.newest{ animation:glow 1.2s ease-out; }
+@keyframes glow{ from{ background:var(--brass-soft);} to{ background:transparent; } }
+.syn{ background:var(--panel2); border-radius:10px; padding:8px 12px; font-size:13px; margin-bottom:8px; }
+.plist{ display:grid; gap:6px; }
+.plist div{ font-size:14px; }
+.plist div span{ color:var(--muted); font-size:12px; margin-left:6px; }
+.bond{ display:grid; grid-template-columns:7.5em 1fr 2.5em; gap:8px; align-items:center; font-size:14px; margin:4px 0; }
+.bond .bar > span{ background:var(--star); }
+.note{ font-size:13px; color:var(--muted); }
+
+/* overlay */
+.ov{ position:fixed; inset:0; background:color-mix(in srgb,var(--bg) 70%,transparent); backdrop-filter:blur(3px); display:none; align-items:center; justify-content:center; padding:16px; padding-top:calc(16px + env(safe-area-inset-top,0px)); padding-bottom:calc(16px + env(safe-area-inset-bottom,0px)); z-index:10; }
+.ov.show{ display:flex; }
+.modal{ background:var(--panel); border:1px solid var(--line); border-radius:16px; width:min(720px,100%); max-height:100%; overflow:auto; padding:20px; }
+.modal h2{ margin:0 0 4px; font-size:24px; }
+.vs{ display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:center; margin:14px 0; }
+.vs .x{ font-family:"Shippori Mincho B1",serif; font-weight:800; color:var(--brass); }
+.side .nm{ font-weight:700; font-size:15px; }
+.side .hp{ font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.side .bar{ height:10px; margin:4px 0; }
+.side.me .bar > span{ background:var(--ok); transition:width .25s; }
+.side.op .bar > span{ background:var(--danger); transition:width .25s; }
+.side.op{ text-align:right; }
+.side .sh{ color:#5e9bd6; }
+.oppspells{ font-size:12px; color:var(--muted); }
+.blog{ height:240px; overflow:auto; background:var(--panel2); border-radius:10px; padding:8px 12px; font-size:13px; }
+.blog div{ padding:1px 0; }
+.blog .me{ color:var(--ink); }
+.blog .op{ color:var(--muted); }
+.blog .heal{ color:var(--ok); }
+.blog .miss{ opacity:.6; }
+.blog .t{ display:inline-block; width:2.6em; color:var(--muted); font-variant-numeric:tabular-nums; }
+.row{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px; flex-wrap:wrap; }
+.btn{ background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:9px 18px; font-weight:700; }
+.btn.main{ background:var(--brass); color:var(--panel); border-color:var(--brass); }
+.result{ font-family:"Shippori Mincho B1",serif; font-size:22px; font-weight:800; margin-top:10px; }
+.result.win{ color:var(--brass); } .result.lose{ color:var(--danger); }
+.rlines p{ margin:2px 0; font-size:14px; }
+
+/* title */
+.hero{ min-height:calc(100vh - 80px); display:grid; place-items:center; text-align:center; }
+.hero h1{ font-size:clamp(34px,7vw,64px); font-weight:800; letter-spacing:.12em; margin:0; line-height:1.25; }
+.hero p.lead{ color:var(--muted); margin:10px auto 26px; max-width:32em; }
+.sky{ font-size:13px; color:var(--star); letter-spacing:.9em; margin-bottom:18px; }
+.namef{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+.namef input{ font:inherit; padding:9px 14px; border-radius:10px; border:1px solid var(--line); background:var(--panel); color:var(--ink); width:12em; }
+.reveal{ text-align:left; }
+.reveal .big{ font-family:"Shippori Mincho B1",serif; font-size:34px; font-weight:800; color:var(--brass); }
+.rank{ font-family:"Shippori Mincho B1",serif; font-size:88px; font-weight:800; line-height:1; color:var(--brass); }
+details{ margin-top:14px; font-size:13px; color:var(--muted); }
+details summary{ cursor:pointer; color:var(--ink); }
+.themebtn{ background:none; border:1px solid var(--line); border-radius:99px; padding:2px 10px; font-size:12px; color:var(--muted); }
+/* 変化バッジ */
+.dlt{ display:inline-block; font-size:12px; font-weight:700; margin-left:4px; padding:0 6px; border-radius:99px; animation:pop .5s ease-out; }
+.dlt.up{ color:var(--ok); background:color-mix(in srgb,var(--ok) 14%,transparent); }
+.dlt.down{ color:var(--danger); background:color-mix(in srgb,var(--danger) 14%,transparent); }
+@keyframes pop{ 0%{ transform:scale(.4); opacity:0;} 60%{ transform:scale(1.2); opacity:1;} 100%{ transform:scale(1);} }
+.st{ grid-template-columns:5.5em 1.6em 3em 3.4em 1fr; }
+.st .dcell{ text-align:left; }
+.bar > span.gain{ background:var(--ok); }
+.changes{ background:var(--panel2); border-radius:10px; padding:8px 12px; font-size:13px; margin-top:12px; }
+.changes b{ font-weight:700; margin-right:6px; }
+/* ポップアップ */
+.pop .kicker{ font-size:12px; color:var(--muted); }
+.pop h2{ margin:2px 0 8px; }
+.pop.big h2{ color:var(--brass); font-size:28px; }
+.pop.bad h2{ color:var(--danger); }
+.pop .txt{ margin:0 0 10px; white-space:pre-line; line-height:1.8; }
+.sex{ font-size:12px; font-weight:700; }
+.sex.m{ color:#4a86c8; } .sex.f{ color:#d0668f; }
+.dtable{ width:auto; min-width:min(100%,380px); border-collapse:collapse; font-size:14px; margin:6px 0 4px; }
+.dtable td{ padding:5px 4px; border-bottom:1px dashed var(--line); font-variant-numeric:tabular-nums; }
+.dtable td:nth-child(2),.dtable td:nth-child(3){ text-align:right; }
+.dtable td:last-child{ text-align:right; font-weight:700; width:4.5em; }
+.dtable .arrow{ color:var(--muted); text-align:center!important; width:1.5em; }
+.gotcard{ border:1px solid var(--brass); border-radius:12px; padding:10px 14px; margin-top:10px; background:var(--brass-soft); }
+.gotcard .n{ font-weight:700; font-size:16px; }
+.gotcard .d{ font-size:13px; color:var(--muted); }
+.kv{ display:grid; grid-template-columns:repeat(auto-fit,minmax(88px,1fr)); gap:6px; margin-top:8px; }
+.kv div{ background:var(--panel); border-radius:8px; padding:4px 8px; font-size:12px; color:var(--muted); }
+.kv b{ display:block; font-size:16px; color:var(--ink); font-variant-numeric:tabular-nums; }
+/* 魔法表 */
+.tblwrap{ overflow-x:auto; margin:0 -4px; }
+.sptbl{ width:100%; border-collapse:collapse; font-size:13px; min-width:560px; }
+.sptbl th{ text-align:right; font-weight:500; color:var(--muted); font-size:12px; padding:6px 6px; border-bottom:1px solid var(--line); white-space:nowrap; }
+.sptbl th:first-child{ text-align:left; }
+.sptbl td{ padding:8px 6px; border-bottom:1px dashed var(--line); text-align:right; font-variant-numeric:tabular-nums; vertical-align:top; }
+.sptbl td:first-child{ text-align:left; }
+.sptbl .nm{ font-weight:700; }
+.sptbl .ds{ display:block; font-size:11px; color:var(--muted); font-weight:400; }
+.sptbl tr.off td{ opacity:.55; }
+.sptbl tr.off td:last-child{ opacity:1; }
+.sptbl button{ background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:3px 10px; font-size:12px; white-space:nowrap; }
+.sptbl button.on{ background:var(--brass); color:var(--panel); border-color:var(--brass); font-weight:700; }
+.best{ color:var(--brass); font-weight:700; }
+.bd{ margin-top:10px; }
+.bd h3{ font-size:14px; margin:8px 0 4px; }
+/* 選択肢 */
+.speaker{ font-size:14px; margin-bottom:2px; }
+.sgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; }
+.scard{ text-align:left; background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:10px 12px; display:grid; gap:3px; }
+.scard:hover{ border-color:var(--brass); }
+.scard.partner{ border-color:var(--star); }
+.sbar{ display:grid; grid-template-columns:1fr 2.2em; gap:6px; align-items:center; font-size:12px; }
+.sbar .bar{ background:var(--panel); }
+.gtbl td{ vertical-align:middle; }
+.gtbl td.num, .gtbl th{ text-align:center; }
+.gtbl th:first-child, .gtbl td:nth-child(2){ text-align:left; }
+.gp{ color:var(--muted); font-size:11px; } .gr{ color:var(--ok); font-size:11px; font-weight:700; } .gs{ color:var(--danger); font-size:11px; }
+.scard.away{ opacity:.5; cursor:not-allowed; filter:grayscale(.6); }
+.scard.away:hover{ border-color:var(--line); }
+.scard.away .snext{ color:var(--muted); }
+.awaytxt{ color:var(--danger); } .heretxt{ color:var(--ok); }
+.sbar .bar > span{ background:var(--star); }
+.snext{ font-size:12px; color:var(--brass); font-weight:700; }
+.ghead{ font-size:15px; margin:14px 0 6px; }
+.ghead .note{ font-weight:400; margin-left:4px; }
+.kind{ font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:0 5px; }
+.pbadge{ font-size:11px; color:#fff; background:var(--brass); border-radius:6px; padding:0 6px; }
+.subaff{ font-size:11px; color:var(--muted); }
+.partnerline{ margin-top:2px; }
+.bondbox{ background:var(--panel2); border-radius:10px; padding:8px 12px; margin:4px 0 8px; max-width:420px; }
+.bondbox .bh{ display:flex; justify-content:space-between; font-size:14px; margin-bottom:4px; }
+.bondbox .bar{ display:flex; height:8px; margin-bottom:4px; }
+.bondbox .bar > span{ background:var(--star); }
+.bondbox .bar > span.gain{ background:var(--ok); }
+.cheer{ background:var(--brass-soft); border:1px solid var(--star); border-radius:12px; padding:10px 14px; margin:10px 0; }
+.cheer .txt{ margin:4px 0; }
+.cheer.rival{ background:var(--panel2); border-color:var(--line); }
+.mm{ font-size:11px; font-weight:700; border-radius:6px; padding:0 6px; margin-left:4px; white-space:nowrap; }
+.mm.good{ color:var(--ok); background:color-mix(in srgb,var(--ok) 14%,transparent); }
+.mm.bad{ color:var(--danger); background:color-mix(in srgb,var(--danger) 12%,transparent); }
+.oppc .d{ margin-top:2px; }
+.phead{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.plist2{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:6px; margin-top:6px; }
+.prow{ display:flex; align-items:center; gap:6px; text-align:left; background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:7px 10px; font-size:14px; }
+.prow.on{ border-color:var(--brass); background:var(--brass-soft); }
+.prow .pst{ margin-left:auto; font-size:11px; color:var(--brass); font-weight:700; }
+.choices{ display:grid; gap:8px; margin-top:6px; }
+.choice{ text-align:left; background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:grid; gap:2px; }
+.warnmsg{ color:var(--danger); font-size:13px; font-weight:700; margin:0 0 8px; }
+.choice:hover{ border-color:var(--brass); }
+.choice .cl{ font-weight:700; font-size:15px; }
+.choice .ch{ font-size:12px; color:var(--muted); }
+.rgrid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:8px; }
+@media (max-width:640px){ .rgrid{ grid-template-columns:1fr; } }
+.rcard{ text-align:left; background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:4px; }
+.rcard:hover{ border-color:var(--brass); }
+.rcard .n{ font-weight:700; font-size:17px; font-family:"Shippori Mincho B1",serif; }
+.rcard .d{ font-size:12px; color:var(--muted); }
+.rcard .kv div{ background:var(--panel); }
+.rcard .pickl{ margin-top:auto; padding-top:8px; font-size:13px; font-weight:700; color:var(--brass); }
+.badge{ display:inline-block; font-size:11px; font-weight:700; padding:0 7px; border-radius:6px; margin-left:4px; border:1px solid var(--line); }
+.badge.new{ color:var(--ok); border-color:var(--ok); }
+.badge.up{ color:var(--brass); border-color:var(--brass); }
+.badge.aff{ color:var(--brass); border-color:var(--brass); background:var(--brass-soft); }
+.badge.rare{ color:#fff; background:var(--brass); border-color:var(--brass); }
+/* ステータス変化の演出 */
+.st, [data-k="fatigue"], [data-k="cond"]{ position:relative; border-radius:8px; }
+.st .bar > span, [data-k="fatigue"] .bar > span{ transition:width .7s cubic-bezier(.2,.8,.2,1); }
+.fl-up{ animation:flUp 1.3s ease-out; }
+.fl-down{ animation:flDown 1.3s ease-out; }
+@keyframes flUp{ 0%{ background:color-mix(in srgb,var(--ok) 32%,transparent); } 100%{ background:transparent; } }
+@keyframes flDown{ 0%{ background:color-mix(in srgb,var(--danger) 28%,transparent); } 100%{ background:transparent; } }
+.float{ position:absolute; right:6px; top:-2px; font-weight:800; font-size:16px; pointer-events:none; animation:rise 1.4s ease-out forwards; }
+.float.up{ color:var(--ok); } .float.down{ color:var(--danger); }
+@keyframes rise{ 0%{ transform:translateY(8px) scale(.7); opacity:0; } 15%{ transform:translateY(0) scale(1.15); opacity:1; } 70%{ opacity:1; } 100%{ transform:translateY(-22px); opacity:0; } }
+.g.rankup{ animation:rankUp 1.4s ease-out; border-radius:6px; }
+.g.rankdown{ animation:flDown 1.2s ease-out; border-radius:6px; }
+@keyframes rankUp{ 0%{ transform:scale(1); } 25%{ transform:scale(1.8); color:var(--star); text-shadow:0 0 12px var(--star); } 100%{ transform:scale(1); } }
+#toasts{ position:fixed; left:50%; transform:translateX(-50%); top:calc(10px + env(safe-area-inset-top,0px)); z-index:20; display:grid; gap:6px; width:min(560px,calc(100% - 24px)); pointer-events:none; }
+.toast{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:8px 12px; box-shadow:0 6px 24px rgba(20,16,40,.18); display:flex; flex-wrap:wrap; align-items:center; gap:6px; animation:toastIn .3s ease-out; transition:opacity .45s, transform .45s; }
+.toast b{ font-size:13px; margin-right:4px; }
+.toast.special{ border-color:var(--star); background:var(--brass-soft); }
+.toast.special b{ color:var(--brass); }
+.toast.out{ opacity:0; transform:translateY(-8px); }
+@keyframes toastIn{ from{ opacity:0; transform:translateY(-10px); } to{ opacity:1; transform:none; } }
+.chip{ font-size:13px; font-weight:700; padding:1px 9px; border-radius:99px; }
+.chip.up{ color:var(--ok); background:color-mix(in srgb,var(--ok) 14%,transparent); }
+.chip.down{ color:var(--danger); background:color-mix(in srgb,var(--danger) 14%,transparent); }
+@media (prefers-reduced-motion: reduce){ *{ animation:none!important; transition:none!important; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="ov" id="ov"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
+<script>
+// =====================================================================
+//  星見の魔法学院 ― ゲームロジック（UIに依存しない部分）
+// ---------------------------------------------------------------------
+//  このファイルは画面を一切触らない。ブラウザでも Node.js でも動くので、
+//  tests/ 以下の自動テスト・バランス検証から直接 require できる。
+//
+//  目次（「// =====」で検索すると飛べます）
+//    暦 ..................... 週数・試験の週・特別期間はシナリオが決める（SC）
+//    データ定義 ............. 出自 / 魔法 / 属性適性 AFF / 属性相性 BEATS・MATCH / 特性 /
+//                             人物 CHARS・物語 CHAR_STORY（セリフもここ）
+//    生徒生成 ............... newStudent：出自・初期値・属性適性の抽選
+//    育成コマンド ........... doTrain / doResearch / doSocial(相手) / doRest
+//    行動中イベント ......... 授業・研究・休息で起きる選択式イベント
+//    効果データ ............. applyFx / fxHint（物語の選択肢などの効果をデータで書く）
+//    習得チャレンジ ......... 確率制の特性・魔法習得と再挑戦（pending）
+//    ターン開始時イベント ... EVENTS（共通）＋シナリオ固有、発生順は SC.turnEventOrder
+//    魔法の性能計算 ......... 画面表示用（戦闘と同じ式）
+//    戦闘 ................... CT制オートバトル（battle）、相性 matchMul
+//    対戦相手 ............... makeOpponent / getOpponent（告知済みの相手） / recommendEquip
+//    シナリオ ............... SCENARIOS.main（本編）と setScenario
+//
+//  状態オブジェクト s（生徒）の主な項目
+//    stats{hp,atk,int,def,acc} 内部は小数・表示は四捨五入
+//    fatigue 0〜100 / cond 0〜4（絶不調〜絶好調） / research 研究進捗%
+//    spells[{id,lv}] 習得魔法 / equip[id] 装備中（数は slots(s) 以下）
+//    passives[id] 特性 / bonds{人物:0〜100} / pending[] 習得挑戦中
+//    affinity[属性] 主適性 / partner 人物id / sub サブ適性 / oppPlan{} 告知済みの対戦相手
+//    flags{} 一度きりイベントの発生済み記録 / results{} 試験結果
+//
+//  バランス調整でよく触る数値
+//    授業の成長量 ........ doTrain の spread（週あたり）
+//    絆の上昇量 .......... doSocial の bond = ri(4, 7)
+//    研究の進み .......... doResearch の inc
+//    イベント発生率 ...... CMD_EVENT_RATE、turnEvents 内の wk(…)
+//    習得の成功率 ........ 各 att の base、attemptRate（失敗1回ごと+20%）
+//    適性・相性 .......... AFF / MATCH（tests/element_matrix.js で確認）
+//    敵の強さ ............ SCENARIOS.main.opponents（tools/tune_opponents.py で倍率調整）
+//  数値を変えたら必ず tests/invariants.js と tests/balance_sim.js を実行する。
+// =====================================================================
+const RNG = { r: Math.random };
+const rnd = () => RNG.r();
+const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function wpick(items, wf) {
+  const ws = items.map(wf); const t = ws.reduce((a, b) => a + b, 0);
+  let x = rnd() * t;
+  for (let i = 0; i < items.length; i++) { x -= ws[i]; if (x <= 0) return items[i]; }
+  return items[items.length - 1];
+}
+
+// ===== 暦（週単位） =====
+// 週数・試験の週・特別期間はシナリオ（ファイル末尾の SCENARIOS）が決める。setScenario() で切り替える。
+let SC = null;                                     // 現在のシナリオ
+let WPM = 4, TOTAL = 144, EXAM_WEEK = {};          // setScenario() が上書きする
+const monthIdx = t => Math.ceil(t / WPM);          // 通算の月（1〜）
+const weekOf = t => (t - 1) % WPM + 1;             // その月の第何週か
+const specialOf = t => (SC && SC.special ? SC.special(t) : null);   // 特別期間（夏合宿など）。なければ null
+const isCamp = t => { const p = specialOf(t); return !!(p && p.trainMul); };
+const wk = p => 1 - Math.pow(1 - p, 1 / WPM);      // 「月あたりp」を「週あたり」の確率に換算
+
+const STATS = ['hp', 'atk', 'int', 'def', 'acc'];
+const STAT_NAME = { hp: '体力', atk: '魔法攻撃', int: '知力', def: '魔法防御', acc: '精度' };
+const SUBJECT = { hp: '魔法体術', atk: '攻撃魔法学', int: '魔導理論', def: '結界学', acc: '魔力制御' };
+const ELEM = {
+  fire: { n: '火', c: '#e0673f' }, water: { n: '水', c: '#3f8fd8' }, wood: { n: '木', c: '#4e9a3a' },
+  light: { n: '光', c: '#d8b93a' }, dark: { n: '闇', c: '#9a5fd0' },
+};
+const ELEMS = Object.keys(ELEM);
+const COND = ['絶不調', '不調', '普通', '好調', '絶好調'];
+const COND_MUL = [0.7, 0.85, 1.0, 1.15, 1.3];
+
+// ===== データ定義 =====
+// ---- 出自 ----
+const ORIGINS = {
+  commoner: { n: '平民', p: 55, init: { hp: 160, atk: 30, int: 30, def: 30, acc: 30 },
+    grow: { hp: 1.08, atk: 1.08, int: 1.08, def: 1.08, acc: 1.08 }, desc: '偏りのない標準型。授業の成長ブレが小さく、どんなビルドにも進める。' },
+  noble: { n: '貴族', p: 25, init: { hp: 150, atk: 30, int: 36, def: 34, acc: 30 },
+    grow: { hp: 0.9, atk: 0.95, int: 1.12, def: 1.12, acc: 0.95 }, desc: '知力・魔法防御が伸びやすく、交流で絆を得やすい。体力はやや伸び悩む。' },
+  orphan: { n: '孤児', p: 17, init: { hp: 140, atk: 25, int: 25, def: 25, acc: 25 },
+    grow: null, desc: '初期値は低いが、2つの「才能」ステータスが大きく伸びる。覚醒イベントの可能性あり。' },
+  heir: { n: '大魔法使いの子', p: 3, init: { hp: 170, atk: 42, int: 42, def: 36, acc: 38 },
+    grow: { hp: 1.1, atk: 1.14, int: 1.14, def: 1.1, acc: 1.14 }, desc: '全ステータスの伸びと魔法適性が高い。属性適性を2つ持つ。' },
+};
+
+// ---- 魔法 ----
+// t: dmg / heal / buff / debuff / shield
+const SPELLS = [
+  { id: 'f1', el: 'fire', n: 'ファイアボルト', ct: 3, t: 'dmg', pow: 1.0 },
+  { id: 'f2', el: 'fire', n: 'フレイムランス', ct: 5, t: 'dmg', pow: 1.6 },
+  { id: 'f3', el: 'fire', n: 'ヒートブランド', ct: 5, t: 'dmg', pow: 0.7, burn: 0.3 },
+  { id: 'f4', el: 'fire', n: 'インフェルノ', ct: 9, t: 'dmg', pow: 3.0, rare: 1 },
+  { id: 'w1', el: 'water', n: 'アクアショット', ct: 3, t: 'dmg', pow: 1.1, accB: 20 },
+  { id: 'w2', el: 'water', n: 'バブルプリズン', ct: 6, t: 'dmg', pow: 0.75, delay: 2 },
+  { id: 'w3', el: 'water', n: 'ミストヴェール', ct: 8, t: 'debuff', stat: 'acc', val: -25, dur: 8 },
+  { id: 'w4', el: 'water', n: 'タイダルウェーブ', ct: 7, t: 'dmg', pow: 2.1, accB: 15, delay: 1, rare: 1 },
+  // 木：持久・再生の属性（棘の連射、吸い取る毒、樹皮の守り、再生）
+  { id: 'g1', el: 'wood', n: 'ソーンバレット', ct: 2, t: 'dmg', pow: 0.6, hits: 2 },
+  { id: 'g2', el: 'wood', n: '宿り木の種', ct: 5, t: 'dmg', pow: 0.5, burn: 0.35, drain: 1 },
+  { id: 'g3', el: 'wood', n: '樹皮の鎧', ct: 9, t: 'buff', stat: 'def', val: 0.35, dur: 8 },
+  { id: 'g4', el: 'wood', n: '世界樹の恵み', ct: 9, t: 'buff', stat: 'regen', val: 0.06, dur: 6, rare: 1 },
+  { id: 'l1', el: 'light', n: 'ライトアロー', ct: 3, t: 'dmg', pow: 1.25 },
+  { id: 'l2', el: 'light', n: 'ヒール', ct: 6, t: 'heal', val: 0.25 },
+  { id: 'l3', el: 'light', n: '祝福', ct: 8, t: 'buff', stat: 'atk', val: 0.4, dur: 8 },
+  { id: 'l4', el: 'light', n: 'セイクリッドレイ', ct: 6, t: 'dmg', pow: 1.95, lifesteal: 0.4, rare: 1 },
+  { id: 'd1', el: 'dark', n: 'シャドウボルト', ct: 3, t: 'dmg', pow: 1.18, self: 0.03 },
+  { id: 'd2', el: 'dark', n: '呪詛', ct: 7, t: 'debuff', stat: 'def', val: -0.35, dur: 8 },
+  { id: 'd3', el: 'dark', n: 'ドレインタッチ', ct: 5, t: 'dmg', pow: 1.0, lifesteal: 0.5 },
+  { id: 'd4', el: 'dark', n: 'アビスゲート', ct: 10, t: 'dmg', pow: 3.6, self: 0.12, crit: 0.3, rare: 1 },
+];
+const SPELL = Object.fromEntries(SPELLS.map(s => [s.id, s]));
+const BASIC = { id: 'basic', el: null, n: '魔力弾', ct: 2, t: 'dmg', pow: 0.6 };
+
+function spellDesc(s) {
+  const p = [];
+  if (s.t === 'dmg') {
+    p.push(`威力${s.hits ? s.pow + '×' + s.hits : s.pow}`);
+    if (s.accB) p.push(`命中+${s.accB}`);
+    if (s.burn) p.push(s.drain ? '毒（4tick継続ダメージ・与えた分を吸収）' : '火傷（4tick継続ダメージ）');
+    if (s.delay) p.push(`相手の全CT+${s.delay}`);
+    if (s.lifesteal) p.push(`与ダメの${s.lifesteal * 100}%回復`);
+    if (s.self) p.push(`自傷${s.self * 100}%`);
+    if (s.crit) p.push(`会心率+${s.crit * 100}%`);
+    if (s.defScale) p.push('自身の魔法防御も威力に加算');
+  } else if (s.t === 'heal') p.push(`最大HPの${s.val * 100}%回復（使うたび効果減衰）`);
+  else if (s.t === 'shield') p.push('魔法防御に応じたバリア');
+  else if (s.t === 'buff') p.push({ regen: `毎tick最大HPの${s.val * 100}%回復`, def: `魔法防御+${s.val * 100}%`, atk: `魔法攻撃+${s.val * 100}%` }[s.stat] + `（${s.dur}tick）`);
+  else if (s.t === 'debuff') p.push({ acc: `相手の精度${s.val}`, def: `相手の魔法防御${s.val * 100}%` }[s.stat] + `（${s.dur}tick）`);
+  return `CT${s.ct}・` + p.join('・');
+}
+
+// ===== 属性適性 =====
+// 主適性＝入学時に決まる生まれ持った属性、サブ適性＝パートナーの属性。
+// 主とサブが同じ属性なら「純化」として主適性の効果が強まる。
+const AFF = {
+  research: { main: 3, sub: 2 },            // 研究の3択での出やすさ（倍率）
+  power: { main: 0.10, sub: 0.05, pure: 0.15 }, // その属性の魔法の威力
+  attempt: { main: 0.15, sub: 0.10 },       // その属性の魔法の習得チャレンジ成功率（加算）
+  synergyNeed: { main: 2, other: 3 },       // 属性共鳴に必要な装備数
+  grow: 0.05,                               // 主適性に対応するステータスの成長（授業）
+};
+// ===== 属性相性 =====
+// 火→木→水→火 の三すくみ、光と闇は互いに弱点。有利なら×strong、不利なら×weak。
+// 守る側の属性＝主適性（敵は各自の属性）。サブ適性は「自分が有利をとる属性」からの弱点を打ち消す。
+const BEATS = { fire: 'wood', wood: 'water', water: 'fire', light: 'dark', dark: 'light' };
+const MATCH = { strong: 1.2, weak: 0.85 };
+// atkEl の攻撃が、守る側 def = { el, aff } に与える倍率
+function matchMul(atkEl, def) {
+  if (!atkEl || !def || !def.el) return 1;
+  let m = 1;
+  if (BEATS[atkEl] === def.el) m = MATCH.strong;
+  else if (BEATS[def.el] === atkEl) m = MATCH.weak;
+  if (m > 1 && def.aff) {           // 弱点の打ち消し：サブ適性（や2つ目の主適性）がその攻撃属性に有利なら等倍に
+    const covers = [def.aff.sub, ...def.aff.main.filter(e => e !== def.el)].filter(Boolean);
+    if (covers.some(e => BEATS[e] === atkEl)) m = 1;
+  }
+  return m;
+}
+// 画面向けの説明（相手の属性 el に対して）
+function matchupInfo(el) {
+  const strongVs = Object.keys(BEATS).filter(a => BEATS[a] === el);             // el に強い属性
+  const weakVs = Object.keys(BEATS).filter(a => BEATS[el] === a && BEATS[a] !== el);  // el の攻撃に弱い属性
+  return { strongVs, weakVs: [BEATS[el]] };
+}
+
+// 属性ごとに伸びやすいステータス（主適性の成長補正の対象。数字は配分）
+const ELEM_STAT = { fire: { atk: 1 }, water: { acc: 1 }, wood: { hp: 0.5, def: 0.5 }, light: { int: 1 }, dark: { atk: 0.5, acc: 0.5 } };
+// aff = { main: [属性…], sub: 属性|null }
+function affOf(s) { return { main: s.affinity, sub: s.sub || null }; }
+function affRole(aff, el) { if (!aff || !el) return null; if (aff.main.includes(el)) return aff.sub === el ? 'pure' : 'main'; return aff.sub === el ? 'sub' : null; }
+function affPower(aff, el) { const r = affRole(aff, el); return 1 + (r ? AFF.power[r] : 0); }
+function synNeed(aff, el) { return aff && aff.main.includes(el) ? AFF.synergyNeed.main : AFF.synergyNeed.other; }
+function synergyOf(aff, elems) { const c = {}; elems.forEach(e => { if (e) c[e] = (c[e] || 0) + 1; }); return Object.keys(c).filter(k => c[k] >= synNeed(aff, k)); }
+
+const SYNERGY = {
+  fire: '与ダメージ+10%', water: '精度+10', wood: '継続ダメージ・継続回復+30%',
+  light: '回復+30%・強化時間+2', dark: '会心率+10%',
+};
+
+// ---- 特性 ----
+const PASSIVES = {
+  focus: { n: '集中力', d: '戦闘時 精度+15' },
+  guts: { n: 'ど根性', d: '戦闘中1度だけ致死ダメージをHP1で耐える' },
+  quick: { n: '先手必勝', d: '戦闘開始時、全魔法が即発動可能' },
+  flow: { n: '魔力循環', d: '全魔法のCT-10%' },
+  wall: { n: '鉄壁', d: '被ダメージ-10%' },
+  adversity: { n: '逆境', d: 'HP30%以下で与ダメージ+35%' },
+  hard: { n: '練習の鬼', d: '授業の成長量+15%' },
+  sleep: { n: '休息上手', d: '休息の回復量+15、調子が上がりやすい' },
+  charm: { n: '人たらし', d: '交流で上がる絆+50%' },
+  scholar: { n: '探究心', d: '研究でレア魔法が出やすい' },
+  tough: { n: 'タフネス', d: '授業・研究の疲労-25%' },
+  sniper: { n: '急所狙い', d: '会心率+10%' },
+  bulwark: { n: '不動の構え', d: '戦闘時 最大HP+15%' },
+  swift: { n: '疾風の足取り', d: '戦闘時 回避+12' },
+  seal_celia: { n: '生徒会長の薫陶', d: '魔法攻撃+10%', u: 1 },
+  seal_garde: { n: '大樹の構え', d: '最大HP+10%・魔法防御+10%', u: 1 },
+  seal_luka: { n: '情報網', d: '精度+12・会心率+5%', u: 1 },
+  seal_ord: { n: '老師の秘伝', d: '全魔法の威力+10%', u: 1 },
+  regrowth: { n: '自然治癒', d: '戦闘中、毎tick最大HPの1%回復' },
+  intel: { n: '情報戦', d: '戦闘開始時、相手の全魔法のCT+1' },
+  noir_bless: { n: '黒猫の加護', d: '会心率+8%・被ダメージ-5%', u: 1 },
+  commoner_grit: { n: '雑草魂', d: '全ステータスの成長+10%', u: 1 },
+  noble_blood: { n: '高貴なる血統', d: '被ダメージ-8%、絆の上昇+15%', u: 1 },
+  orphan_soul: { n: '逆境の魂', d: 'HP50%以下で与ダメ+25%・被ダメ-15%', u: 1 },
+  heir_blood: { n: '大魔導の血', d: '全魔法の威力+12%', u: 1 },
+};
+const COMMON_PASSIVES = ['focus', 'guts', 'quick', 'flow', 'wall', 'adversity', 'hard', 'sleep', 'charm', 'scholar', 'tough', 'sniper'];
+
+// ---- 人物 ----
+// 人物は2つのグループに分かれる（GROUPS）。
+//   star  … 五星（いつつぼし）：各属性に1人ずつの同級生。絆100で1人だけ「盟友」になれる。卒業大会の決勝の相手にもなる
+//   event … イベント：先輩・後輩・先生。盟友にはなれない代わりに、1回の交流で伸びるステータスが多く、絆100で餞別をくれる
+// kind＝立場（同級生/先輩/後輩/先生）、fromMonth＝会えるようになる月（後輩は2年目から）
+const GROUPS = {
+  star: { n: '五星', d: '盟友候補の同級生' },
+  event: { n: 'イベント', d: '先輩・後輩・先生' },
+};
+const EVENT_GAIN = 1.5;   // イベントの人物と交流したときのステータス上昇の倍率
+const CHARS = {
+  // ---------- 五星（盟友候補・同級生） ----------
+  leon: { group: 'star', kind: '同級生', busy: null, absentRate: 0.2, absent: ['演習場にこもって、誰とも会おうとしない', '他校の生徒に決闘を申し込みに出かけた'],
+    where: ['放課後の演習場', '購買の前', '寮の談話室', '中庭の噴水の前'], n: 'レオン', sex: '男', first: '俺', tone: 'ぶっきらぼうで負けず嫌い。語尾は「〜だろ」「〜じゃねえか」', role: 'ライバルの同級生', el: 'fire', stat: 'atk', p40: 'adversity', p80: 'quick',
+    talk: ['「次の模擬戦も俺が勝つ。覚えとけよ」', '「……お前の詠唱、前より速くなってんじゃねえか。ちっ」', '「腹減った。購買行くぞ、お前も来い」', '「理論なんざ知るか……って言いてえけど、そこ、俺にも教えろ」'],
+    b40: '「……しょうがねえな。俺が追い詰められた時のやり方、見せてやるよ」',
+    b80: '「お前は俺のライバルだ。……他の誰にも負けんじゃねえぞ」',
+    secret: '「俺の炎の奥義だ。一回しか見せねえからな、目ぇかっぽじって見とけ」',
+    retry: '「おい、この前の続きやるぞ。今度こそモノにしろよ」' },
+  mina: { group: 'star', kind: '同級生', busy: { week: 3, reason: '医務室の当番' }, absent: ['風邪をひいて寝込んでいる', '薬草の買い出しで城下町へ'],
+    where: ['医務室', '中庭の芝生', '薬草園', '寮の食堂'], n: 'ミナ', sex: '女', first: 'ミナ', tone: '自分を名前で呼ぶ、おっとりした癒し系。語尾は「〜だよ〜」「〜かな？」', role: '保健委員の同級生', el: 'water', stat: 'hp', p40: 'sleep', p80: 'tough',
+    talk: ['「ミナね、今日は薬草茶を淹れてきたんだよ〜。飲んでって？」', '「無理しちゃだめだよ〜？ ミナ、心配しちゃうもん」', '「えへへ、一緒にお昼寝すると元気出るよね〜」', '「その傷、見せて？ ミナが手当てしてあげる〜」'],
+    b40: '「ミナの秘密の休み方、特別に教えてあげるね〜」',
+    b80: '「ミナね、ずーっと応援してるからね〜。……えへへ、これからも仲良くしてね？」',
+    secret: '「ミナのおばあちゃん直伝の水の魔法だよ〜。大事に使ってね？」',
+    retry: '「この前の、もう一回やってみよ〜？ ミナも付き合うよ〜」' },
+  sylva: { group: 'star', kind: '同級生', busy: { week: 2, reason: '園芸部の水やり当番' }, absent: ['温室にこもって植物の世話をしている', '裏庭の森で、木とお話ししている'],
+    where: ['学院の温室', '中庭の大樹の下', '園芸部の花壇', '裏庭の小さな森'], n: 'シルヴァ', sex: '女', first: 'わたし', tone: 'のんびりした不思議ちゃん。植物に話しかける。語尾は「〜なの」「〜ね」', role: '園芸部の同級生', el: 'wood', stat: 'def', p40: 'wall', p80: 'regrowth',
+    talk: ['「この子（鉢植え）がね、あなたのこと好きだって言ってるの」', '「木の声を聞いているとね、魔力が静かになるの」', '「温室のお花、今日も元気なの。あなたも元気？」', '「……ふふ、あなたの魔力、少しだけ木の匂いがするね」'],
+    b40: '「あなたになら、わたしの守り方を教えてもいいの。木はね、倒れないのが一番なの」',
+    b80: '「あなたと一緒にいるとね、森の中みたいに落ち着くの」',
+    secret: '「世界樹のお話、知ってる？ ……その力、少しだけ分けてあげるね」',
+    retry: '「この前のつづき、しよ？ 木は、ゆっくり育つものなの」' },
+  julius: { group: 'star', kind: '同級生', busy: { week: 1, reason: '学級委員会の会議' }, absent: ['実家からの呼び出しで外出中', '図書館で調べものに没頭している'],
+    where: ['教室の窓際の席', '図書館の閲覧室', '学級委員室', '朝の礼拝堂'], n: 'ユリウス', sex: '男', first: '僕', tone: '真面目な優等生。誰にでも丁寧語で、語尾は「〜です」「〜ですね」', role: '学級委員長の同級生', el: 'light', stat: 'int', p40: 'focus', p80: 'guts',
+    talk: ['「おはようございます。今日の課題、もう終わりましたか？」', '「光の魔法は、正確さがすべてです。……と、父の受け売りですが」', '「君の詠唱、とても綺麗ですね。見習いたいです」', '「学級委員の仕事、手伝ってくれて助かります」'],
+    b40: '「君には話してもいいでしょう。僕が集中するときの、ちょっとしたコツです」',
+    b80: '「君がいてくれて、本当によかった。……心から、そう思います」',
+    secret: '「これは我が家に伝わる光の秘術です。君になら、託せます」',
+    retry: '「この前の続きをしましょう。大丈夫、君ならできます」' },
+  chloe: { group: 'star', kind: '同級生', busy: { week: 4, reason: '本人いわく「闇の儀式の日」' }, absent: ['屋上で黄昏れている', '旧校舎を「探索」している'],
+    where: ['屋上の給水塔の陰', '旧校舎の空き教室', '夕暮れの時計塔', '図書館の禁書棚の前'], n: 'クロエ', sex: '女', first: '我', tone: '中二病。尊大な口調で、語尾は「〜なのだ」「〜であろう」。照れると素が出る', role: '眼帯の同級生', el: 'dark', stat: 'acc', p40: 'sniper', p80: 'swift',
+    talk: ['「フッ……我が闇の力が、今日も疼くのだ」', '「貴様、我の右目の封印が気になるか？ ……た、ただの眼帯なのだ」', '「闇は恐れるものではない。……友とするものなのだ」', '「べ、別に一緒に昼食をとりたかったわけではないのだ！」'],
+    b40: '「貴様には教えてやろう。我が闇の、急所を穿つ極意を……」',
+    b80: '「貴様は……我が真の名を知る、唯一の者なのだ」',
+    secret: '「これぞ深淵の秘術……貴様にだけ、見せてやるのだ」',
+    retry: '「フッ、先日の続きなのだ。今度こそ、闇を受け入れよ」' },
+  // ---------- イベント（先輩・後輩・先生） ----------
+  celia: { group: 'event', seal: 'seal_celia', kind: '先輩', busy: { week: 1, reason: '生徒会の定例会議' }, absent: ['来客の対応に追われている', '王都の実家に呼び出された'],
+    where: ['生徒会室', '図書館の窓際の席', '学院の温室', '夕暮れの時計塔'], n: 'セリア先輩', sex: '女', first: '私', tone: '面倒見のいいお姉さん。語尾は「〜わ」「〜かしら」', role: '生徒会長の先輩', el: 'light', stat: 'acc', p40: 'charm',
+    talk: ['「生徒会の仕事、手伝ってくれて助かるわ。ありがとう」', '「焦らないで。魔法は心で編むものよ」', '「ふふ、その杖の持ち方、昔の私にそっくりね」', '「たまには息抜きも大事よ。紅茶はいかが？」'],
+    b40: '「あなたになら教えてもいいかしら。人と仲良くなる、ちょっとしたコツ」',
+    secret: '「これは代々の生徒会長だけに伝わる光の魔法。あなたに託すわ」',
+    retry: '「この前の続き、もう一度やってみましょう。大丈夫、あなたならできるわ」',
+    farewell: '「私が卒業しても、あなたならきっと大丈夫。……先輩として、誇りに思うわ」' },
+  garde: { group: 'event', seal: 'seal_garde', kind: '先輩', busy: { week: 2, reason: '決闘部の対外試合' }, absent: ['裏山でひとり修行している', '後輩たちの稽古をつけている'],
+    where: ['決闘部の道場', '演習場の隅', '学院の城壁の上', '裏山の岩場'], n: 'ガルド先輩', sex: '男', first: '自分', tone: '寡黙で言葉少な。「……」から話し始め、短く言い切る', role: '決闘部部長の先輩', el: 'wood', stat: 'def', p40: 'bulwark',
+    talk: ['「……撃て。受けてやる」', '「……自分は、守ることしかできん」', '「……悪くない。……続けろ」', '「……腹が減っては、盾は持てん。……食え」'],
+    b40: '「……お前には、見せてもいい。自分の構えを」',
+    secret: '「……大樹の構えだ。……一度しか見せん」',
+    retry: '「……続きだ。構えろ」',
+    farewell: '「……お前は、強くなった。……自分の盾は、もう要らんな」' },
+  luka: { group: 'event', seal: 'seal_luka', kind: '後輩', fromMonth: 13, busy: null, absentRate: 0.4, absent: ['気まぐれで、どこかへ出かけている', '「取材」と言って姿を消した', '屋根の上で昼寝中（見つからない）'],
+    where: ['購買のカウンター裏', '校舎の屋根の上', '城下町の露店通り', '図書館の奥の書架'], n: 'ルカ', sex: '女', first: 'ボク', tone: '2年目に入学してくる、小悪魔な情報屋の後輩。主人公を「センパイ」と呼ぶ。語尾は「〜さ」「〜だよね♪」', role: '情報通の後輩', el: 'water', stat: 'acc', p40: 'intel',
+    talk: ['「センパイ、ボクの情報は高いよ？ でもセンパイには特別さ♪」', '「他校の代表の弱点、知りたくない？ ふふん、センパイのために調べといたんだ」', '「屋根の上って風が気持ちいいんだよね。センパイもおいでよ」', '「噂話は鮮度が命。ほら、センパイ、耳貸して？」'],
+    b40: '「センパイ、なかなか面白いね。ボクの“情報戦”のやり方、教えてあげる♪」',
+    secret: '「とっておきの魔法、特別に見せちゃう。ついてこられるかな、センパイ？」',
+    retry: '「センパイ、この前のやつ、続きいっとく？ ボク、今ヒマだからさ♪」',
+    farewell: '「センパイが卒業しちゃうの、ちょっとさみしいな。……ボクの情報網、いつでも使っていいからね♪」' },
+  ord: { group: 'event', seal: 'seal_ord', kind: '先生', busy: { week: 4, reason: '王都の魔導学会に出張中' }, absent: ['研究室に「立入禁止」の札がかかっている', '禁書庫の整理にこもっている'],
+    where: ['オルド先生の研究室', '禁書庫の入口', '天文台', '古びた実験室'], n: 'オルド先生', sex: '男', first: 'わし', tone: 'のんびりした老魔導師。語尾は「〜じゃ」「〜のう」', role: '研究室の老魔導師', el: 'dark', stat: 'int', p40: 'scholar',
+    talk: ['「ふぉっふぉ、若いのう。知識は逃げはせんぞ」', '「わしの若い頃はな、禁書庫に三日こもったものじゃ」', '「その術式、なかなか筋がいい。精進せい」', '「知ることを恐れるでないぞ。恐れるべきは、知らぬままでいることじゃ」'],
+    b40: '「おぬし、見どころがあるのう。わしの研究の心得を授けようかの」',
+    secret: '「闇を恐れる者に、この術は使えん。おぬしなら大丈夫じゃろう」',
+    retry: '「この前の続きじゃ。焦らず、ゆっくりやってみい」',
+    farewell: '「ふぉっふぉ、教えることはもう何もないわい。……立派になったのう」' },
+};
+
+// ---- キャラクターの物語 ----
+// 全員：絆20・60の物語（s20/s60）。五星はさらに、盟友の誓い（oath）、保留の返事（wait）、
+// 卒業大会での声援（cheer）、エンディング（ending）、決勝で相手になったときのひとこと（final）を持つ。
+// 選択肢の効果 fx は「データ」で書く（applyFx が適用し、fxHint がヒント文を自動生成する）。
+//   ステータス: hp/atk/int/def/acc（表示どおりの値） fatigue: 疲労 cond: 調子 bond: 相手との絆
+//   bondAll: 全員との絆 research: 研究進捗%
+const CHAR_STORY = {
+  leon: {
+    s20: { title: 'レオンの素顔', text: '夜の演習場で、レオンがひとり黙々と特訓していた。\nレオン：「……見てんじゃねえよ。俺はな、才能なんかねえから、こうするしかねえんだ」', choices: [
+      { label: '一緒にやろう', fx: { atk: 3, fatigue: 8, bond: 4 }, res: 'レオン：「……勝手にしろ。ついてこられたら、の話だがな」' },
+      { label: '無理はするなよ', fx: { cond: 1, bond: 2 }, res: 'レオン：「うるせえ。……でも、まあ、ありがとな」' }] },
+    s60: { title: 'レオンの挫折', text: 'レオンが他校の代表に完敗したらしい。いつもの威勢がない。\nレオン：「……俺、才能ある奴には勝てねえのかな」', choices: [
+      { label: '本気でぶつかり合おう', fx: { atk: 5, hp: 15, fatigue: 12, bond: 6 }, res: '模擬戦で全力をぶつけ合った。\nレオン：「……はっ、やっぱお前とやると燃えるわ。見てろよ、次は勝つ」' },
+      { label: '一緒に敗因を分析しよう', fx: { int: 4, acc: 3, bond: 6 }, res: 'レオン：「……なるほどな。力だけじゃダメってことか。お前、意外と頭いいじゃねえか」' }] },
+    oath: 'レオン：「……認めてやるよ。お前は俺の最高のライバルで、盟友だ。……これからは、お前の隣で戦わせろ」',
+    wait: 'レオン：「……ちっ、しょうがねえな。待っててやるよ。長くは待たねえからな」',
+    cheer: 'レオン：「情けねえ戦いしたら承知しねえぞ。……お前は、俺の盟友なんだからな」',
+    ending: 'レオン：「卒業しても、俺たちの勝負は終わらねえぜ。……盟友としてな」',
+    final: 'レオン：「やっとお前と決着をつけられるな。……手加減なんかしやがったら、一生許さねえぞ」',
+  },
+  mina: {
+    s20: { title: 'ミナの夢', text: '医務室の奥で、ミナがこっそり水の魔法を練習していた。\nミナ：「わわっ、見られちゃった〜。ミナね、本当は治癒魔導士になりたいんだ〜」', choices: [
+      { label: '応援するよ', fx: { cond: 1, bond: 5 }, res: 'ミナ：「えへへ、ありがと〜。ミナ、がんばるね〜」' },
+      { label: '練習に付き合うよ', fx: { hp: 12, acc: 2, fatigue: 6, bond: 4 }, res: 'ミナ：「ほんと〜？ じゃあ、ちょっと痛いけど我慢してね〜？」' }] },
+    s60: { title: '届かない癒し', text: '実習で、ミナの治癒魔法が怪我人の手当てに間に合わなかったらしい。\nミナ：「ミナ……向いてないのかな〜……えへへ、ごめんね、こんな話」', choices: [
+      { label: '一緒に特訓しよう', fx: { hp: 15, int: 3, fatigue: 10, bond: 6 }, res: 'ミナ：「……うん。ミナ、もう一回がんばってみる〜！」' },
+      { label: '今日はゆっくり休もう', fx: { fatigue: -15, cond: 1, bond: 6 }, res: 'ミナ：「……えへへ。そばにいてくれるだけで、元気出てきた〜」' }] },
+    oath: 'ミナ：「あのね、ミナ、これからもずっと一緒にがんばりたいな〜って。……ミナの盟友に、なってくれる？」',
+    wait: 'ミナ：「……えへへ、うん。ミナ、待ってるね〜」',
+    cheer: 'ミナ：「ケガしたら、ミナがすぐ治してあげるからね〜。だから、思いっきり行ってきて！」',
+    ending: 'ミナ：「卒業しても、ミナがずーっと手当てしてあげるからね〜」',
+    final: 'ミナ：「ミナ、今日だけは負けないよ〜。……本気で行くから、覚悟してね！」',
+  },
+  sylva: {
+    s20: { title: '温室の秘密', text: '夜の温室で、シルヴァが枯れかけた鉢植えに話しかけていた。\nシルヴァ：「……この子ね、もうすぐ枯れちゃうの。でも、最後まで一緒にいてあげたいの」', choices: [
+      { label: '一緒に世話をしよう', fx: { hp: 12, def: 2, bond: 5 }, res: 'シルヴァ：「……ありがとう。この子、少しだけ元気になった気がするの」' },
+      { label: '魔法で助けられないか調べよう', fx: { int: 3, research: 10, bond: 4 }, res: 'シルヴァ：「……ふふ、あなたって優しいのね。一緒に調べてみよう？」' }] },
+    s60: { title: '焼けた森', text: '学院の裏庭の森で小さな火事があり、シルヴァの大切な木が焼けてしまった。\nシルヴァ：「……わたし、何もできなかったの。守りたかったのに」', choices: [
+      { label: '新しい苗を一緒に植えよう', fx: { hp: 15, def: 4, bond: 6 }, res: 'シルヴァ：「……うん。焼けた土からでも、ちゃんと芽は出るの。あなたが教えてくれたね」' },
+      { label: '次は守れるように、強くなろう', fx: { atk: 4, def: 3, fatigue: 8, bond: 6 }, res: 'シルヴァ：「……強く。うん、わたし、強くなるの。あなたと一緒に」' }] },
+    oath: 'シルヴァ：「あのね、わたし、ずっと根っこを張る場所を探してたの。……あなたの隣が、いいな。盟友になってくれる？」',
+    wait: 'シルヴァ：「……うん。木は、待つのが得意なの」',
+    cheer: 'シルヴァ：「大丈夫。あなたの根っこは、もうしっかり張ってるの。……倒れないで、ね」',
+    ending: 'シルヴァ：「卒業しても、あなたの隣で、ゆっくり育っていきたいの」',
+    final: 'シルヴァ：「……わたしね、あなたと戦えるの、ちょっとうれしいの。本気で、根を張るね」',
+  },
+  julius: {
+    s20: { title: '完璧な委員長', text: '放課後の教室で、ユリウスがひとり答案を見つめていた。\nユリウス：「……98点。完璧でなければ、意味がないんです。僕は、そういう家に生まれたので」', choices: [
+      { label: '98点でも、すごいよ', fx: { cond: 1, bond: 5 }, res: 'ユリウス：「……そう、でしょうか。君にそう言われると、少し肩の力が抜けますね」' },
+      { label: '一緒に復習しよう', fx: { int: 4, fatigue: 6, bond: 4 }, res: 'ユリウス：「ありがとうございます。……誰かと勉強するのは、初めてかもしれません」' }] },
+    s60: { title: '光の名門', text: 'ユリウスの実家から、卒業後は家を継ぐようにと手紙が届いたらしい。\nユリウス：「僕は……本当は、自分の力で誰かを照らしたかったんです」', choices: [
+      { label: '君の道は、君が決めるべきだ', fx: { acc: 4, int: 3, bond: 6 }, res: 'ユリウス：「……そうですね。君の言葉で、決心がつきました」' },
+      { label: '家の期待に応えるのも、君らしさだと思う', fx: { hp: 15, int: 3, bond: 5 }, res: 'ユリウス：「……ええ。両方を照らす道も、きっとありますね」' }] },
+    oath: 'ユリウス：「君となら、どんな闇も照らせる気がするんです。……僕の盟友に、なってくれませんか」',
+    wait: 'ユリウス：「……わかりました。答えは、いつまでも待っています」',
+    cheer: 'ユリウス：「君の勝利を、僕は少しも疑っていません。……さあ、光の方へ」',
+    ending: 'ユリウス：「卒業しても、君は僕の誇りです。どうか、これからも隣で」',
+    final: 'ユリウス：「正々堂々、全力でお相手します。……君にだけは、手加減したくありません」',
+  },
+  chloe: {
+    s20: { title: '眼帯の理由', text: '雨の日、クロエが眼帯を外して、ぼんやり窓の外を見ていた。\nクロエ：「……み、見るでないっ！ ……我の瞳は魔力が強すぎて、昔みんなに怖がられたのだ」', choices: [
+      { label: '綺麗な瞳だと思う', fx: { cond: 1, bond: 5 }, res: 'クロエ：「な、なにを言うのだ、貴様は……。……でも、少しだけ、うれしいのだ」' },
+      { label: '魔力の制御、一緒に練習しよう', fx: { acc: 3, fatigue: 6, bond: 4 }, res: 'クロエ：「フッ、貴様がそこまで言うなら、付き合ってやらんこともないのだ」' }] },
+    s60: { title: '闇の暴走', text: '実習中、クロエの闇魔法が暴走し、クラスメイトを怯えさせてしまった。\nクロエ：「……やはり、我は闇に呑まれる運命なのだ。皆に近づかぬ方がよい」', choices: [
+      { label: '一緒に制御の特訓をしよう', fx: { acc: 4, int: 3, fatigue: 10, bond: 6 }, res: 'クロエ：「……貴様は、本当に物好きなのだ。……ありがとう、なのだ」' },
+      { label: '怖くなんかない。そばにいるよ', fx: { cond: 1, hp: 12, bond: 7 }, res: 'クロエ：「……っ。……闇の中にも、光はあるのだな」' }] },
+    oath: 'クロエ：「……我と、盟約を結ぶのだ。……いや、ちゃんと言うのだ。これからも、ずっと隣にいてほしいのだ」',
+    wait: 'クロエ：「……フッ、よかろう。闇は、待つことに慣れているのだ」',
+    cheer: 'クロエ：「フッ……我が盟友が負けるはずなかろう。闇の加護を、受け取るがよい」',
+    ending: 'クロエ：「卒業しても、我らの盟約は永遠なのだ。……約束、なのだ」',
+    final: 'クロエ：「ついにこの時が来たのだな……。我が全霊の闇、受けてみるがよい！」',
+  },
+  celia: {
+    s20: { title: '生徒会長の憂鬱', text: '夕暮れの生徒会室で、セリア先輩がため息をついていた。\nセリア先輩：「……あら、見られちゃった。完璧な生徒会長でいるのも、少し疲れるのよ」', choices: [
+      { label: '話を聞かせてください', fx: { cond: 1, bond: 4 }, res: 'セリア先輩：「ふふ、あなたって聞き上手ね。少し楽になったわ」' },
+      { label: '仕事を手伝います', fx: { int: 3, acc: 2, fatigue: 8, bond: 3 }, res: 'セリア先輩：「本当に？ ……頼もしい後輩を持ったわね」' }] },
+    s60: { title: '会長の引き継ぎ', text: 'セリア先輩の卒業が近づき、次の生徒会長を誰にするかで悩んでいるらしい。\nセリア先輩：「私がいなくなっても、この学院が笑顔でいられるか……それだけが心配なの」', choices: [
+      { label: '先輩が作った学院なら、大丈夫です', fx: { acc: 4, def: 3, bond: 6 }, res: 'セリア先輩：「……ありがとう。あなたにそう言われると、信じられる気がするわ」' },
+      { label: '引き継ぎを手伝います', fx: { int: 4, fatigue: 8, bond: 6 }, res: 'セリア先輩：「本当に頼りになるわね。……来年のこと、少しだけお願いしてもいいかしら」' }] },
+  },
+  garde: {
+    s20: { title: '盾の理由', text: '城壁の上で、ガルド先輩がひとり夕日を見ていた。\nガルド：「……自分は昔、守れなかった。……だから、盾になると決めた」', choices: [
+      { label: '黙って隣に座る', fx: { cond: 1, bond: 5 }, res: 'ガルド：「……。……悪くない」' },
+      { label: '守り方を教えてください', fx: { def: 4, fatigue: 6, bond: 4 }, res: 'ガルド：「……いいだろう。……厳しいぞ」' }] },
+    s60: { title: '砕けた盾', text: '決闘部の試合で、ガルド先輩が後輩をかばって大怪我をした。\nガルド：「……問題ない。……盾は、壊れるためにある」', choices: [
+      { label: '盾は壊れちゃだめです', fx: { def: 5, hp: 15, bond: 6 }, res: 'ガルド：「……。……そうか。……覚えておく」' },
+      { label: '次は一緒に守りましょう', fx: { atk: 3, def: 3, bond: 6 }, res: 'ガルド：「……一緒に、か。……頼む」' }] },
+  },
+  luka: {
+    s20: { title: '情報屋の素顔', text: '屋根の上で、ルカが珍しく真顔で空を見ていた。\nルカ：「……ねえ、センパイ。ボクがなんで情報屋やってるか、知りたい？ ……なーんてね♪」', choices: [
+      { label: '知りたい', fx: { acc: 3, bond: 5 }, res: 'ルカ：「……ふふ、また今度ね。でも、聞いてくれてうれしいよ、センパイ」' },
+      { label: '話したくなったらでいい', fx: { cond: 1, bond: 4 }, res: 'ルカ：「センパイって、ほんとずるいよね。……ありがと」' }] },
+    s60: { title: '噂の行方', text: 'ルカが学院を辞めて旅に出るかもしれない、という噂を聞いた。\nルカ：「ボク、ひとつの場所にいるの苦手なんだよね。……でもさ、ここは、ちょっとだけ居心地いいんだ」', choices: [
+      { label: '行かないでほしい', fx: { cond: 1, acc: 3, bond: 7 }, res: 'ルカ：「……ずるいなあ、センパイ、そういうの。……もうちょっとだけ、いてあげる♪」' },
+      { label: '卒業までに、一緒に学院中の噂を集めよう', fx: { int: 3, acc: 3, fatigue: 6, bond: 6 }, res: 'ルカ：「いいね、それ！ センパイとなら、面白いネタがいっぱい集まりそう♪」' }] },
+  },
+  ord: {
+    s20: { title: '老魔導師の昔話', text: '研究室で、オルド先生が古い写真を眺めていた。\nオルド先生：「ふぉっふぉ、昔の弟子たちじゃ。みな立派になって、わしを置いていきおったわい」', choices: [
+      { label: 'お弟子さんの話を聞かせてください', fx: { int: 3, bond: 4 }, res: 'オルド先生：「そうかそうか。長くなるぞい、覚悟せい」' },
+      { label: '先生の研究を手伝わせてください', fx: { research: 15, bond: 3 }, res: 'オルド先生：「ほう、物好きじゃのう。……ありがたいわい」' }] },
+    s60: { title: '禁じられた研究', text: 'オルド先生が、長年続けてきた闇魔法の研究を封印しようとしていた。\nオルド先生：「この研究は危うい。わしの代で終わらせるべきかもしれん……」', choices: [
+      { label: '一緒に安全な形で完成させましょう', fx: { int: 5, research: 20, fatigue: 10, bond: 6 }, res: 'オルド先生：「……ふぉっふぉ。若い者に背中を押されるとはのう。やってみるか」' },
+      { label: '先生の判断を信じます', fx: { cond: 1, def: 4, bond: 5 }, res: 'オルド先生：「……ありがとうよ。おぬしには、別の形で伝えるとしよう」' }] },
+  },
+};
+
+// イベント専用キャラ（交流相手ではない）
+const NOIR = { n: 'ノワール', sex: '女', first: 'わたくし', tone: '金色の瞳の黒猫。心を許した相手にだけ、上品な言葉で話しかける', role: '謎の黒猫' };
+
+// ===== 生徒生成 =====
+function newStudent(name, forceOrigin) {
+  const oid = forceOrigin || wpick(Object.keys(ORIGINS), k => ORIGINS[k].p).toString();
+  const o = ORIGINS[oid];
+  const s = { name, origin: oid, stats: {}, grow: {}, fatigue: 0, cond: 2, turn: 1,
+    spells: [], equip: [], passives: [], partner: null, sub: null, absent: {}, research: 0, bonds: Object.fromEntries(Object.keys(CHARS).map(k => [k, 0])), pending: [],
+    flags: {}, talents: [], results: {}, log: [] };
+  for (const k of STATS) s.stats[k] = Math.round(o.init[k] * (0.92 + rnd() * 0.16));
+  if (oid === 'orphan') {
+    const t = [...STATS].sort(() => rnd() - 0.5).slice(0, 2); s.talents = t;
+    for (const k of STATS) s.grow[k] = t.includes(k) ? 1.45 : 0.9;
+  } else s.grow = { ...o.grow };
+  // 属性適性
+  s.affinity = [pick(ELEMS)];
+  if (oid === 'heir') { let e2; do e2 = pick(ELEMS); while (e2 === s.affinity[0]); s.affinity.push(e2); }
+  // 初期魔法: 適性属性の基本魔法1つ（貴族は2つ）
+  const firstPool = SPELLS.filter(x => s.affinity.includes(x.el) && !x.rare && x.t === 'dmg');
+  addSpell(s, pick(firstPool).id);
+  if (oid === 'noble') addSpell(s, pick(SPELLS.filter(x => !x.rare && !s.spells.find(y => y.id === x.id))).id);
+  return s;
+}
+
+function slots(s) { return clamp(2 + Math.floor(s.stats.int / 40), 2, 7); }
+
+function addSpell(s, id) {
+  const have = s.spells.find(x => x.id === id);
+  if (have) { if (have.lv < 5) have.lv++; return { up: true, lv: have.lv }; }
+  s.spells.push({ id, lv: 1 });
+  if (s.equip.length < slots(s)) s.equip.push(id);
+  return { up: false };
+}
+function addPassive(s, id) {
+  if (s.passives.includes(id)) return false;
+  s.passives.push(id);
+  // 別の経路で手に入れた場合も、挑戦中リストから片づける
+  if (s.pending) s.pending = s.pending.filter(a => !(a.kind === 'passive' && a.id === id));
+  return true;
+}
+function has(s, id) { return s.passives.includes(id); }
+
+// 主適性に対応するステータスの授業成長補正
+function affGrow(s, k) { let w = 0; for (const e of s.affinity) w += (ELEM_STAT[e][k] || 0); return 1 + AFF.grow * w; }
+function growMul(s) { return COND_MUL[s.cond] * (has(s, 'commoner_grit') ? 1.1 : 1); }
+// ステータスを増減する。内部は小数で保持し、戻り値は表示上（整数）の変化量。
+// 知力が下がって装備枠が減った場合は、後ろに装備した魔法から外す（装備数が枠を超えないように）。
+function gain(s, k, v) {
+  const b = s.stats[k]; s.stats[k] = Math.max(1, b + v);
+  if (k === 'int' && s.equip) while (s.equip.length > slots(s)) s.equip.pop();
+  return Math.round(s.stats[k]) - Math.round(b);
+}
+
+function fmtGain(obj) {
+  return Object.entries(obj).filter(([, v]) => v).map(([k, v]) => `${STAT_NAME[k]}${v > 0 ? '+' : ''}${v}`).join(' / ');
+}
+
+// ===== 育成コマンド =====
+function failRate(s) { return clamp((s.fatigue - 50) * 1.6, 0, 80); }
+
+// ===== 行動中のランダムイベント（授業・研究・休息） =====
+const CMD_EVENT_RATE = { train: 0.16, research: 0.2, rest: 0.18 };
+function cmdEvents(s, kind, stat) {
+  if (isQuiet(s) || rnd() >= CMD_EVENT_RATE[kind]) return [];
+  const fat = (s, v) => { s.fatigue = clamp(s.fatigue + v, 0, 100); };
+  const cond = (s, v) => { s.cond = clamp(s.cond + v, 0, 4); };
+  const addR = (s, v) => { s.research += v; };
+  const sn = STAT_NAME[stat] || '';
+  const extra = (k, v) => k === 'hp' ? v * 3 : v;
+  const pool = {
+    train: [
+      () => mkEvent('セリア先輩の見回り', `生徒会の見回りでセリア先輩が通りかかった。\nセリア先輩：「あら、熱心ね。少しだけフォームを見てあげましょうか？」`, [
+        { label: '素直に教わる', hint: '精度+2・セリアとの絆+5', fn: s => { gain(s, 'acc', 2); addBond(s, 'celia', 5); return 'セリア先輩：「そう、肩の力を抜いて。……ほら、ずっと良くなったわ」'; } },
+        { label: '「大丈夫です」と答える', hint: `${sn}+${extra(stat, 1)}`, fn: s => { gain(s, stat, extra(stat, 1)); return 'セリア先輩：「ふふ、頼もしいわね。頑張って」'; } },
+      ]),
+      () => mkEvent('ガルドの的役', `演習場の隅で、ガルド先輩が腕を組んでいる。\nガルド：「……的が要るなら、自分がなる」`, [
+        { label: '全力で撃ち込む', hint: '魔法攻撃+2・ガルドとの絆+5・疲労+6', fn: s => { gain(s, 'atk', 2); addBond(s, 'garde', 5); fat(s, 6); return 'ガルド：「……いい威力だ。……もっと来い」'; } },
+        { label: '受け方を教わる', hint: '魔法防御+2・ガルドとの絆+5', fn: s => { gain(s, 'def', 2); addBond(s, 'garde', 5); return 'ガルド：「……足で受けろ。……そうだ」'; } },
+      ]),
+      () => mkEvent('魔力の暴走', '授業中、杖の先で魔力が膨れ上がった！', [
+        { label: '力ずくで抑え込む', hint: `${sn}+${extra(stat, 3)}・疲労+10`, fn: s => { gain(s, stat, extra(stat, 3)); fat(s, 10); return '汗だくになりながら、暴れる魔力をねじ伏せた。'; } },
+        { label: '空へ逃がす', hint: '魔法攻撃+1・調子↑', fn: s => { gain(s, 'atk', 1); cond(s, 1); return '空に花火のような光が咲き、クラスから拍手が起きた。'; } },
+      ]),
+      () => mkEvent('コツをつかんだ', `${SUBJECT[stat]}の授業中、ふと何かが噛み合った気がした。`, [
+        { label: '忘れないうちに反復する', hint: `${sn}+${extra(stat, 3)}・疲労+8`, fn: s => { gain(s, stat, extra(stat, 3)); fat(s, 8); return '何度も繰り返し、感覚を体に刻み込んだ。'; } },
+        { label: 'ノートにまとめる', hint: '知力+2', fn: s => { gain(s, 'int', 2); return '感覚を言葉にして、ノートに書き留めた。'; } },
+      ]),
+      () => mkEvent('抜き打ちテスト', '教官：「今から抜き打ちテストを行う」――教室がざわめいた。', [
+        { label: '真面目に解く', hint: '知力+2・疲労+4', fn: s => { gain(s, 'int', 2); fat(s, 4); return 'ほとんどの問題に答えられた。'; } },
+        { label: 'ヤマを張る', hint: '50%で全ステータス+2／外れると調子↓', fn: s => { if (rnd() < 0.5) { for (const k of STATS) gain(s, k, extra(k, 2)); return 'ヤマが大当たり！ 満点をもらった。'; } cond(s, -1); return 'ヤマが外れた……。'; } },
+      ]),
+    ],
+    research: [
+      () => mkEvent('オルド先生の助言', `研究室でうなっていると、オルド先生が覗き込んできた。\nオルド先生：「ふぉっふぉ、その術式、上下が逆さまじゃぞ」`, [
+        { label: '助言を聞く', hint: '研究進捗+20%・オルド先生との絆+5', fn: s => { addR(s, 20); addBond(s, 'ord', 5); return 'オルド先生：「そうじゃ、そこを返せば……ほれ、繋がったじゃろう」'; } },
+        { label: '自力で解いてみせる', hint: '知力+3・疲労+6', fn: s => { gain(s, 'int', 3); fat(s, 6); return 'オルド先生：「ほう、自分でやるか。若いのう」\n時間はかかったが、自力で解き明かした。'; } },
+      ]),
+      () => !isUnlocked(s, 'luka') ? null : mkEvent('ルカの耳寄り情報', `図書館で、後輩のルカが隣の席に滑り込んできた。\nルカ：「センパイ、ボク面白い論文見つけたんだよね♪ 見たい？」`, [
+        { label: '見せてもらう', hint: '研究進捗+15%・ルカとの絆+5', fn: s => { addR(s, 15); addBond(s, 'luka', 5); return 'ルカ：「でしょ？ センパイ、今度なにかおごってね♪」'; } },
+        { label: '今は集中したいと断る', hint: '知力+2', fn: s => { gain(s, 'int', 2); return 'ルカ：「ちぇー、センパイのいけずー」'; } },
+      ]),
+      () => mkEvent('実験の失敗', 'ボンッ！ 調合中の魔法薬が小さく爆発した。', [
+        { label: 'すぐに片付ける', hint: '疲労+4', fn: s => { fat(s, 4); return '幸い、誰にも怪我はなかった。'; } },
+        { label: '原因を徹底分析する', hint: '知力+3・研究進捗+10%・疲労+8', fn: s => { gain(s, 'int', 3); addR(s, 10); fat(s, 8); return '失敗の原因から、新しい理論の糸口が見えた。'; } },
+      ]),
+      () => mkEvent('深夜の研究室', '気づけば夜更け。研究がちょうど乗ってきたところだ。', [
+        { label: '徹夜で続ける', hint: '研究進捗+25%・疲労+15', fn: s => { addR(s, 25); fat(s, 15); return '朝日と共に、大きく前進した。'; } },
+        { label: 'きりのいいところで寝る', hint: '調子↑', fn: s => { cond(s, 1); return 'ぐっすり眠り、頭がすっきりした。'; } },
+      ]),
+      () => { if (has(s, 'scholar')) return null; const att = { kind: 'passive', id: 'scholar', base: 0.4, src: 'ord', retryText: 'あの時の閃きの続きが、また頭をよぎった。' };
+        return mkEvent('閃きの瞬間', '研究の最中、世界の見え方が一瞬だけ変わった気がした。', [
+          attemptChoice(att, 'この感覚を追いかける', '疲労+6', s => fat(s, 6)),
+          { label: '目の前の研究に戻る', hint: '研究進捗+10%', fn: s => { addR(s, 10); return '閃きはひとまず置いて、手を動かした。'; } },
+        ]); },
+    ],
+    rest: [
+      () => mkEvent('窓辺の黒猫', '昼寝をしていると、金色の瞳の黒猫が窓辺で丸くなっていた。', [
+        { label: 'そっと撫でる', hint: '調子↑・次にノワールを追う時の成功率+20%', fn: s => { cond(s, 1); s.flags.noirFed = 1; return '黒猫は目を細め、ゴロゴロと喉を鳴らした。'; } },
+        { label: '起こさないように寝直す', hint: '疲労-8', fn: s => { fat(s, -8); return '猫の寝息につられ、深く眠った。'; } },
+      ]),
+      () => mkEvent('休日の城下町', '天気がいいので、城下町へ出かけることにした。', [
+        { label: '市場を見て回る', hint: '調子↑・疲労+4', fn: s => { cond(s, 1); fat(s, 4); return '露店の串焼きがおいしかった。'; } },
+        { label: '古本屋に入り浸る', hint: '知力+2・研究進捗+10%', fn: s => { gain(s, 'int', 2); addR(s, 10); return '掘り出し物の魔導理論書を見つけた。'; } },
+      ]),
+      () => mkEvent('悪夢', '試験に落ちる夢を見て、飛び起きた。', [
+        { label: '夜風に当たって散歩する', hint: '精度+2・疲労+4', fn: s => { gain(s, 'acc', 2); fat(s, 4); return '星を眺めているうちに、心が落ち着いた。'; } },
+        { label: 'もう一度寝る', hint: '調子↓・疲労-8', fn: s => { cond(s, -1); fat(s, -8); return 'もやもやは残ったが、体は休まった。'; } },
+      ]),
+    ],
+  };
+  const cands = pool[kind].map(f => f()).filter(Boolean);
+  return cands.length ? [pick(cands)] : [];
+}
+
+function doTrain(s, stat) {
+  const out = { kind: 'train', lines: [] };
+  if (rnd() * 100 < failRate(s)) {
+    s.cond = Math.max(0, s.cond - 1);
+    s.fatigue = clamp(s.fatigue + 10, 0, 100);
+    let t = `${SUBJECT[stat]}の授業で無理をして失敗した…（調子ダウン）`;
+    if (rnd() < 0.35) { const d = gain(s, stat, -3 * (stat === 'hp' ? 3 : 1)); t += ` ${STAT_NAME[stat]}${d}`; }
+    out.lines.push(t); out.fail = true; out.events = [{ title: '授業に失敗…', text: t, bad: true }]; return out;
+  }
+  const spc = specialOf(s.turn); const camp = !!(spc && spc.trainMul); const cmul = camp ? spc.trainMul : 1;
+  const spread = s.origin === 'commoner' ? [3.2, 3.7] : [2.8, 4.1];   // 週あたりの成長量（月単位版と総量が揃うよう調整）
+  let base = (spread[0] + rnd() * (spread[1] - spread[0])) * (has(s, 'hard') ? 1.15 : 1) * cmul;
+  const g = {};
+  const mul = (k) => (k === 'hp' ? 3 : 1) * s.grow[k] * growMul(s) * affGrow(s, k);
+  g[stat] = gain(s, stat, base * mul(stat));
+  // 副次成長
+  const side = { hp: 'def', atk: 'acc', int: 'acc', def: 'hp', acc: 'int' }[stat];
+  g[side] = gain(s, side, (0.65 + rnd() * 0.4) * mul(side) * cmul);
+  s.fatigue = clamp(s.fatigue + (camp ? spc.trainFatigue : 22) * (has(s, 'tough') ? 0.75 : 1), 0, 100);
+  out.lines.push(`${camp ? '【夏合宿】' : ''}${SUBJECT[stat]}の${camp ? '特訓' : '授業'}を受けた。${fmtGain(g)}`);
+  out.events = cmdEvents(s, 'train', stat);
+  return out;
+}
+
+// ---- 研究：3つの候補から1つを選ぶ ----
+function researchOffer(s) {
+  const rareW = (has(s, 'scholar') ? 0.9 : 0.35) + (s.origin === 'heir' ? 0.3 : 0) + s.stats.int / 600;
+  const pool = [...SPELLS]; const out = [];
+  while (out.length < 3 && pool.length) {
+    const sp = wpick(pool, x => { const h = s.spells.find(y => y.id === x.id); if (h && h.lv >= 5) return 0.0001; const r = affRole(affOf(s), x.el); return (r === 'main' || r === 'pure' ? AFF.research.main : r === 'sub' ? AFF.research.sub : 1) * (x.rare ? rareW : 1) * (h ? 0.7 : 1); });
+    out.push(sp.id); pool.splice(pool.indexOf(sp), 1);
+  }
+  return out;
+}
+function doResearch(s) {
+  const out = { kind: 'research', lines: [] };
+  s.fatigue = clamp(s.fatigue + 16 * (has(s, 'tough') ? 0.75 : 1), 0, 100);
+  if (rnd() * 100 < failRate(s) * 0.8) { s.cond = Math.max(0, s.cond - 1); out.lines.push('研究に集中できず、成果は出なかった…（調子ダウン）'); out.fail = true; out.events = [{ title: '研究が行き詰まった', text: '疲れで集中できず、成果は出なかった…', bad: true }]; return out; }
+  const inc = Math.round(ri(24, 34) + s.stats.int / 15);
+  s.research += inc;
+  const di = gain(s, 'int', (1 + rnd()) * s.grow.int * growMul(s) * 0.4);
+  if (s.research >= 100) { s.research -= 100; out.offer = researchOffer(s); }
+  else out.lines.push(`研究を進めた。進捗 ${s.research}%（+${inc}%） 知力+${di}`);
+  out.events = cmdEvents(s, 'research');
+  return out;
+}
+function learnChoice(s, id) {
+  const sp = SPELL[id]; const r = addSpell(s, id);
+  const di = gain(s, 'int', (1 + rnd()) * s.grow.int * growMul(s));
+  return r.up ? `研究で【${sp.n}】の理解が深まった！（Lv${r.lv}） 知力+${di}`
+    : `新魔法【${sp.n}】（${ELEM[sp.el].n}${sp.rare ? '・レア' : ''}）を習得した！ 知力+${di}`;
+}
+
+// ---- 選択式イベントの共通処理 ----
+function mkEvent(title, text, choices, extra) { return { title, text, choices, ...(extra || {}) }; }
+function resolveChoice(s, ev, i) {
+  const c = ev.choices[i]; const a = snap(s); const r = c.fn(s);
+  const o = typeof r === 'string' ? { text: r } : r;
+  return { title: ev.title, choice: c.label, ...o, diff: diffSnap(a, snap(s)) };
+}
+function hintOf(s, c) { return typeof c.hint === 'function' ? c.hint(s) : c.hint; }
+// 絆の上限：絆40・80の節目は、その出来事が起きるまで越えられない（出来事は、能力が目安に届くと起きる）
+function bondCap(s, k) {
+  const f = s.flags;
+  if (!f['b40' + k]) return 40;
+  if (!f['b80' + k]) return 80;
+  return 100;
+}
+function addBond(s, k, v) {
+  if (v > 0) v = Math.round(v * (has(s, 'charm') ? 1.5 : 1) * (has(s, 'noble_blood') ? 1.15 : 1));
+  s.bonds[k] = clamp(s.bonds[k] + v, 0, Math.max(bondCap(s, k), s.bonds[k]));
+}
+function statHint(k, v) { return `${STAT_NAME[k]}+${k === 'hp' ? v * 3 : v}`; }
+
+// ---- 習得チャレンジ（確率制・失敗しても再挑戦できる） ----
+// att: { kind:'passive'|'spell', id, base(基本成功率), src(再挑戦のきっかけになる人物), retryText }
+function attKey(att) { return (att.kind === 'passive' ? 'p:' : 's:') + att.id; }
+function attName(att) { return att.kind === 'passive' ? `特性【${PASSIVES[att.id].n}】` : `魔法【${SPELL[att.id].n}】`; }
+function attFails(s, att) { const e = s.pending.find(x => x.key === attKey(att)); return e ? e.fails : 0; }
+// 進行ロック：絆40・80の節目は、その人の得意ステータスが目安に届くまで越えられない（体力は3倍）
+const NEED = { 40: 110, 80: 170 };
+function needFor(cid, lv) { return NEED[lv] * (CHARS[cid].stat === 'hp' ? 3 : 1); }
+function statReady(s, cid, lv) { return s.stats[CHARS[cid].stat] >= needFor(cid, lv); }
+function attemptRate(s, att) {
+  const bonus = att.id === 'noir_bless' && s.flags.noirFed ? 0.2 : 0;
+    const r = att.kind === 'spell' ? affRole(affOf(s), SPELL[att.id].el) : null;
+  const ab = r === 'sub' ? AFF.attempt.sub : r ? AFF.attempt.main : 0;   // 適性属性の魔法は習得しやすい
+  return clamp(att.base + 0.2 * attFails(s, att) + (s.cond - 2) * 0.08 + bonus + ab, 0.1, 0.95);
+}
+function attemptHint(att, pre) {
+  return (s) => `${pre ? pre + '・' : ''}${attName(att)}${att.kind === 'passive' ? '：' + PASSIVES[att.id].d : '：' + spellDesc(SPELL[att.id])}・成功率${Math.round(attemptRate(s, att) * 100)}%${attFails(s, att) ? `（コツLv${attFails(s, att)}）` : ''}`;
+}
+// 挑戦中リストに登録（既にあれば何もしない）して、その項目を返す
+function addPending(s, att) {
+  const key = attKey(att);
+  let e = s.pending.find(x => x.key === key);
+  if (!e) { e = { ...att, key, fails: 0 }; s.pending.push(e); }
+  return e;
+}
+function tryLearn(s, att) {
+  const key = attKey(att); const p = attemptRate(s, att); const name = attName(att);
+  if (rnd() < p) {
+    s.pending = s.pending.filter(x => x.key !== key);
+    const say = att.okText ? att.okText + '\n' : '';
+    if (att.kind === 'passive') { addPassive(s, att.id); return { text: `${say}成功！ ${name}を習得した！`, passive: att.id, big: true, ok: true }; }
+    const r = addSpell(s, att.id);
+    return { text: `${say}成功！ ${name}${r.up ? 'の理解が深まった（Lv' + r.lv + '）' : 'を習得した'}！`, spell: att.id, big: true, ok: true };
+  }
+  const e = addPending(s, att);
+  e.fails++;
+  return { text: `失敗…。でも手応えはあった。次に挑戦するときは、もっと成功しやすくなる。`, bad: true };
+}
+function attemptChoice(att, label, pre, costFn) {
+  return { label, hint: attemptHint(att, pre), fn: s => { const r = tryLearn(s, att); if (costFn) costFn(s); return r; } };
+}
+function retryEvent(s, a) {
+  return mkEvent(`再挑戦：${attName(a)}`, a.retryText || `以前つかみ損ねた${attName(a)}。今度こそ…！`, [
+    attemptChoice(a, '挑戦する', '疲労+8', s => { s.fatigue = clamp(s.fatigue + 8, 0, 100); }),
+    { label: '今回は見送る', hint: 'また次の機会に', fn: () => 'また次の機会を待つことにした。' },
+  ], { retry: true });
+}
+function cleanPending(s) {
+  s.pending = (s.pending || []).filter(a => a.kind === 'passive' ? !has(s, a.id) : ((s.spells.find(y => y.id === a.id) || {}).lv || 0) < 5);
+}
+
+// ---- 効果をデータで書くための仕組み ----
+const FX_NAME = { fatigue: '疲労', research: '研究進捗' };
+function applyFx(s, fx, cid) {
+  for (const [k, v] of Object.entries(fx)) {
+    if (STATS.includes(k)) gain(s, k, v);
+    else if (k === 'fatigue') s.fatigue = clamp(s.fatigue + v, 0, 100);
+    else if (k === 'cond') s.cond = clamp(s.cond + v, 0, 4);
+    else if (k === 'bond') addBond(s, cid, v);
+    else if (k === 'bondAll') for (const b in s.bonds) addBond(s, b, v);
+    else if (k === 'research') s.research += v;
+  }
+}
+function fxHint(fx, cid) {
+  return Object.entries(fx).map(([k, v]) => {
+    if (k === 'cond') return v > 0 ? '調子↑' : '調子↓';
+    if (k === 'bond') return `${CHARS[cid].n}との絆+${v}`;
+    if (k === 'bondAll') return `全員との絆+${v}`;
+    const n = STAT_NAME[k] || FX_NAME[k]; return `${n}${v > 0 ? '+' : ''}${v}${k === 'research' ? '%' : ''}`;
+  }).join('・');
+}
+function fxChoice(label, fx, res, cid, after) {
+  return { label, hint: s => fxHint(fx, cid) + (fx.bond && s && s.bonds[cid] >= bondCap(s, cid) ? `（${CHARS[cid].n}との絆は🔒で止まっている）` : ''), fn: s => { applyFx(s, fx, cid); if (after) after(s); return res; } };
+}
+
+// ---- 交流 ----
+// 週ごとの在・不在。各キャラの busy（毎月決まった週は不在）と absent（ランダムな不在理由）、
+// シナリオの availability（不在率・最低人数・特別期間に来る人）で決まる。結果は s.absent{人物: 理由|null}
+function rollAvailability(s) {
+  const av = SC.availability; const w = weekOf(s.turn); const sp = specialOf(s.turn);
+  const res = {}; const randomAbsent = [];
+  for (const k of Object.keys(CHARS)) {
+    const c = CHARS[k]; let reason = null;
+    const inSpecial = sp && av.special && av.special[sp.id];   // 特別期間中は、参加者の決まった予定はなし（みな合宿所にいる）
+    if (!isUnlocked(s, k)) reason = `${c.fromMonth > 12 ? Math.ceil(c.fromMonth / 12) + '年目' : ''}から登場`;
+    else if (inSpecial && !av.special[sp.id].includes(k) && s.partner !== k) reason = `${sp.name}には来ていない`;
+    else if (!inSpecial && c.busy && c.busy.week === w) reason = c.busy.reason;
+    else if (rnd() < (s.partner === k ? av.partnerRate : (c.absentRate != null ? c.absentRate : av.rate))) { reason = pick(c.absent); randomAbsent.push(k); }
+    res[k] = reason;
+  }
+  // 会える人が少なすぎる週は、ランダムな不在から順に取り消す
+  while (Object.values(res).filter(r => !r).length < av.minPresent && randomAbsent.length) res[randomAbsent.splice(Math.floor(rnd() * randomAbsent.length), 1)[0]] = null;
+  s.absent = res;
+}
+// 画面向け：能力が足りずに節目で止まっているなら { level, stat, need, cur } を返す
+function lockInfo(s, cid) {
+  const f = s.flags, b = s.bonds[cid];
+  const lv = b >= 40 && !f['b40' + cid] ? 40 : b >= 80 && !f['b80' + cid] ? 80 : 0;
+  if (!lv || statReady(s, cid, lv)) return null;
+  const c = CHARS[cid];
+  return { level: lv, stat: c.stat, need: needFor(cid, lv), cur: Math.round(s.stats[c.stat]) };
+}
+// 画面向け：その人との「関係の壁」（絆40・80を越えるのに必要な能力）の一覧
+//   state: 'passed'＝もう越えた / 'ready'＝能力は届いている / 'short'＝まだ足りない
+function gateInfo(s, cid) {
+  const c = CHARS[cid], cur = Math.round(s.stats[c.stat]);
+  return { stat: c.stat, cur, gates: [40, 80].map(lv => ({ lv, need: needFor(cid, lv),
+    state: s.flags['b' + lv + cid] ? 'passed' : cur >= needFor(cid, lv) ? 'ready' : 'short' })) };
+}
+// 節目で止まったときの案内（その節目につき1回だけ）
+function lockNotice(s, cid, lv) {
+  const f = s.flags, c = CHARS[cid];
+  if (f['n' + lv + cid]) return [];
+  f['n' + lv + cid] = 1;
+  return [{ title: `🔒 ${c.n}との絆`, text: `${c.n}との関係を、ここから先へ深めるには力が足りないようだ。\n${STAT_NAME[c.stat]}を${needFor(cid, lv)}まで鍛えれば、関係が深まりそうだ（いま${Math.round(s.stats[c.stat])}）。`, char: cid }];
+}
+// 盟友になれる相手か（五星のみ）
+function canPartner(cid) { return CHARS[cid].group === 'star'; }
+// もう出会っているか（後輩は2年目から）
+function isUnlocked(s, cid) { const m = CHARS[cid].fromMonth; return !m || monthIdx(s.turn) >= m; }
+// 今週交流できる相手
+function socialTargets(s) { return Object.keys(CHARS).filter(k => !(s.absent && s.absent[k])); }
+// 交流相手の選択画面に出す「次に起きること」
+function bondNext(s, cid) {
+  const b = s.bonds[cid], c = CHARS[cid], star = c.group === 'star';
+  if (s.partner === cid) return '盟友';
+  const li = lockInfo(s, cid);
+  if (li) return `🔒 ${STAT_NAME[li.stat]}が${li.need}になると関係が深まる（いま${li.cur}）`;
+  const f = s.flags, soon = '（まもなく）';
+  if (b < 20) return `絆20：物語「${CHAR_STORY[cid].s20.title}」`;
+  if (!f['b40' + cid]) return `絆40：特性【${PASSIVES[c.p40].n}】に挑戦${b >= 40 ? soon : ''}`;
+  if (b < 60) return `絆60：物語「${CHAR_STORY[cid].s60.title}」`;
+  if (!f['b80' + cid]) return `絆80：秘伝魔法【${SPELLS.find(x => x.el === c.el && x.rare).n}】に挑戦${b >= 80 ? soon : ''}`;
+  if (!star) return b < 100 ? `絆100：餞別（特性【${PASSIVES[c.seal].n}】）` : '絆は最大';
+  if (b < 100) return s.partner ? '絆100：かけがえのない友' : '絆100：盟友の誓い';
+  if (!s.partner) return '盟友の誓いを立てられる';
+  return '絆は最大';
+}
+function storyEvent(s, cid, key) {
+  const st = CHAR_STORY[cid][key];
+  return mkEvent(`${CHARS[cid].n}：${st.title}`, st.text,
+    st.choices.map((ch, i) => fxChoice(ch.label, ch.fx, ch.res, cid, s => { s.flags[key + cid] = i + 1; })), { char: cid, big: key === 's60' });
+}
+// ---- 絆の節目（20物語・40特性・60物語・80秘伝・100誓い/餞別） ----
+// 交流でもイベントでも、絆が節目を越えたらここで出来事を作る。flags で一度きりにしている。
+// fromSocial：交流の最中か（盟友の誓いを保留したとき、次の交流であらためて申し込まれるようにするため）
+function milestoneEvents(s, cid, fromSocial) {
+  const c = CHARS[cid], f = s.flags, b = s.bonds[cid], out = [];
+  if (!isUnlocked(s, cid)) return out;
+  if (b >= 20 && !f['s20' + cid]) { f['s20' + cid] = 1; out.push(storyEvent(s, cid, 's20')); }
+  if (b >= 40 && !f['b40' + cid] && !statReady(s, cid, 40)) out.push(...lockNotice(s, cid, 40));
+  else if (b >= 40 && !f['b40' + cid]) {
+    f['b40' + cid] = 1;
+    const att = { kind: 'passive', id: c.p40, base: 0.6, src: cid, retryText: `${c.n}：${c.retry}` };
+    out.push(mkEvent(`${c.n}との絆 ★`, `${c.n}との距離がぐっと縮まった。\n${c.n}：${c.b40}`, [
+      attemptChoice(att, `${c.n}の教えを受ける`),
+      { label: '一緒に特訓する', hint: `${statHint(c.stat, 12)}・疲労+8（確実）`, fn: s => { gain(s, c.stat, c.stat === 'hp' ? 36 : 12); s.fatigue = clamp(s.fatigue + 8, 0, 100); return `${c.n}と日が暮れるまで特訓した。`; } },
+    ], { char: cid }));
+  }
+  if (b >= 60 && !f['s60' + cid]) { f['s60' + cid] = -1; out.push(storyEvent(s, cid, 's60')); }
+  if (b >= 80 && !f['b80' + cid] && !statReady(s, cid, 80)) out.push(...lockNotice(s, cid, 80));
+  else if (b >= 80 && !f['b80' + cid]) {
+    f['b80' + cid] = 1;
+    const rs = SPELLS.find(x => x.el === c.el && x.rare);
+    const att = { kind: 'spell', id: rs.id, base: 0.5, src: cid, retryText: `${c.n}：${c.retry}` };
+    out.push(mkEvent(`${c.n}の秘伝`, `${c.n}：${c.secret}`, [
+      attemptChoice(att, '秘伝の修行を受ける', '疲労+10', s => { s.fatigue = clamp(s.fatigue + 10, 0, 100); }),
+      { label: 'まだ早いと辞退する', hint: '調子↑（また機会はある）', fn: s => { s.cond = Math.min(4, s.cond + 1); addPending(s, att); return 'もっと力をつけてから、と約束した。'; } },
+    ], { big: true, char: cid }));
+  }
+  // 絆100：五星 → 盟友の誓い（いつでも・1周に1人）／盟友が別にいれば「かけがえのない友」。どちらも絆100特性（p80）
+  //        イベント → 餞別（固有の特性＋全ステータス＋得意ステータス）
+  if (b >= 100 && !f['b100' + cid]) {
+    const st = CHAR_STORY[cid];
+    if (c.group === 'event') {
+      const sp = PASSIVES[c.seal];
+      out.push(mkEvent(`${c.n}からの餞別`, `${c.n}との絆が最大になった。\n${c.n}：${c.farewell}`, [
+        { label: 'ありがたく受け取る', hint: `特性【${sp.n}】：${sp.d}・全ステータス+5・${statHint(c.stat, 10)}`, fn: s => {
+          f['b100' + cid] = 1; addPassive(s, c.seal);
+          for (const k of STATS) gain(s, k, k === 'hp' ? 15 : 5);
+          gain(s, c.stat, c.stat === 'hp' ? 30 : 10);
+          return { text: `${c.n}から、心のこもった餞別を受け取った。`, passive: c.seal, big: true };
+        } },
+      ], { char: cid, big: true }));
+    } else if (s.partner && s.partner !== cid) {
+      const pn = PASSIVES[c.p80];
+      out.push(mkEvent(`${c.n}：かけがえのない友`, `${c.n}との絆が最大になった。\n${c.n}：${c.b80}`, [
+        { label: 'これからもよろしく', hint: `特性【${pn.n}】：${pn.d}・調子↑`, fn: s => {
+          f['b100' + cid] = 1; addPassive(s, c.p80); s.cond = clamp(s.cond + 1, 0, 4);
+          return { text: `${c.n}と、これからも変わらぬ友情を誓った。`, passive: c.p80 };
+        } },
+      ], { char: cid }));
+    } else if (!s.partner && (fromSocial || !f['oath' + cid])) {
+      f['oath' + cid] = 1;   // 交流以外で申し込まれるのは最初の1回だけ（保留したら、次の交流で）
+      const pn = PASSIVES[c.p80];
+      out.push(mkEvent(`${c.n}：盟友の誓い`, st.oath, [
+        { label: '誓いを立てる', hint: `${c.n}が盟友に（1周に1人だけ）・サブ適性【${ELEM[c.el].n}】を獲得・特性【${pn.n}】：${pn.d}`, fn: s => {
+          s.partner = cid; s.sub = c.el; f['b100' + cid] = 1; addPassive(s, c.p80);
+          return { text: `${c.n}と、盟友の誓いを立てた。\n${ELEM[c.el].n}の力が、自分の中に流れ込んでくる――サブ適性【${ELEM[c.el].n}】を得た。`, passive: c.p80, big: true };
+        } },
+        { label: '今はまだ答えられない', hint: `また${c.n}と交流したときに、あらためて誓いを立てられる`, fn: () => st.wait },
+      ], { big: true, char: cid }));
+    }
+  }
+  return out;
+}
+
+// ---- 交流 ----
+function doSocial(s, cid) {
+  const out = { kind: 'social', lines: [], events: [] };
+  s.fatigue = clamp(s.fatigue + 6, 0, 100);
+  if (rnd() < 0.15) s.cond = Math.min(4, s.cond + 1);
+  if (!cid || !socialTargets(s).includes(cid)) cid = pick(socialTargets(s));   // 指定がない・不在の相手なら、会える人からランダム（画面からは起きない）
+  const c = CHARS[cid];
+  // 交流で上がる絆は控えめ（絆の主な伸びは五星とのランダムイベント）。イベントの人物は交流が主な手段なので多め
+  const bFrom = s.bonds[cid];
+  addBond(s, cid, c.group === 'event' ? ri(4, 6) : ri(3, 4));
+  const g = {}; g[c.stat] = gain(s, c.stat, (0.8 + rnd() * 0.6) * (c.stat === 'hp' ? 3 : 1) * s.grow[c.stat] * growMul(s) * (c.group === 'event' ? EVENT_GAIN : 1));
+  const place = pick(c.where); const line = pick(c.talk);
+  out.lines.push(`${place}で${c.n}（${c.role}）と過ごした。${c.n}：${line} ${fmtGain(g)}（絆 ${bFrom}→${s.bonds[cid]}）`);
+  // 交流そのものを毎回ポップアップで見せる（ステータス変化はUI側で行動全体の差分を添付）
+  out.events.push({ title: `${c.n}と交流`, text: `${place}で、${c.n}と過ごした。\n${c.n}：${line}`, char: cid, bond: { k: cid, from: bFrom, to: s.bonds[cid] } });
+  cleanPending(s);
+  const ms = milestoneEvents(s, cid, true);
+  out.events.push(...ms);
+  // 節目の出来事がなければ、つかみ損ねた技・特性に再挑戦できることがある
+  if (!ms.length) {
+    const pend = s.pending.filter(a => a.src === cid);
+    if (pend.length && rnd() < 0.3) out.events.push(retryEvent(s, pick(pend)));
+  }
+
+  if (!isQuiet(s) && s.origin === 'noble' && rnd() < 0.08) {
+
+    out.events.push(mkEvent('【貴族】サロンへの招待', '名家のサロンから招待状が届いた。', [
+      { label: '社交に励む', hint: '全員との絆+6・知力+5・魔法防御+5・疲労+10', fn: s => { for (const k in s.bonds) addBond(s, k, 6); gain(s, 'int', 5); gain(s, 'def', 5); s.fatigue = clamp(s.fatigue + 10, 0, 100); return '顔を広げ、有益な話もたくさん聞けた。'; } },
+      { label: '顔だけ出して早めに帰る', hint: '疲労-10・調子↑', fn: s => { s.fatigue = clamp(s.fatigue - 10, 0, 100); s.cond = Math.min(4, s.cond + 1); return '挨拶だけ済ませ、ゆっくり休んだ。'; } },
+    ]));
+  }
+  if (!isQuiet(s) && rnd() < 0.04) {
+    const cand = COMMON_PASSIVES.filter(p => !has(s, p)).sort(() => rnd() - 0.5).slice(0, 2);
+    if (cand.length) out.events.push(mkEvent('ひらめき', '何気ない会話の中で、大切なことに気づけそうだ。どちらをものにする？',
+      cand.map(p => attemptChoice({ kind: 'passive', id: p, base: 0.5, src: cid, retryText: '以前のひらめきが、また頭をよぎった。' }, `【${PASSIVES[p].n}】を意識する`))));
+  }
+  return out;
+}
+
+
+function doRest(s) {
+  const out = { kind: 'rest', lines: [] };
+  const amt = 45 + (has(s, 'sleep') ? 15 : 0);
+  s.fatigue = clamp(s.fatigue - amt, 0, 100);
+  const up = rnd() < (has(s, 'sleep') ? 0.8 : 0.55);
+  if (up) s.cond = Math.min(4, s.cond + 1);
+  out.lines.push(`しっかり休んだ。疲労-${amt}${up ? '・調子アップ' : ''}`);
+  out.events = cmdEvents(s, 'rest');
+  return out;
+}
+
+// ===== 変化量の記録 =====
+function snap(s) { const o = { fatigue: Math.round(s.fatigue), cond: s.cond }; for (const k of STATS) o[k] = Math.round(s.stats[k]); return o; }
+function diffSnap(a, b) {
+  const d = [];
+  for (const k of STATS) if (a[k] !== b[k]) d.push({ k, name: STAT_NAME[k], from: a[k], to: b[k] });
+  if (a.fatigue !== b.fatigue) d.push({ k: 'fatigue', name: '疲労', from: a.fatigue, to: b.fatigue, inv: true });
+  if (a.cond !== b.cond) d.push({ k: 'cond', name: '調子', from: COND[a.cond], to: COND[b.cond], up: b.cond > a.cond });
+  return d;
+}
+
+// ===== 五星のランダムイベント（絆の主な伸び） =====
+// 五星は全員が同じ数（4つ）のイベントを持ち、毎週同じ確率で誰か1人のイベントが起きる（SC.starEventRate）。
+// 同じ人のイベントは、まだ見ていないものから選ぶ（4つ全部見たら、また最初から）。
+// 選択肢は「絆を大きく伸ばす」か「ステータスを優先する」かの2択が基本。
+const STAR_EVENTS = {
+  leon: [
+    (s, c) => mkEvent('レオン：模擬戦の申し込み', 'レオンが杖を突きつけてきた。\nレオン：「おい、決着つけようぜ。まさか逃げねえよな？」', [
+      { label: '受けて立つ', hint: '実際に模擬戦を行う。勝てば魔法攻撃+4・レオンとの絆+7／負けても体力+12・絆+4。疲労+15', fn: s => {
+        const o = makeOpponent(SC.rivalLevel(monthIdx(s.turn)), { name: 'レオン', el: 'fire', passives: [] });
+        for (const k in o.stats) o.stats[k] = Math.round(o.stats[k] * 0.85);
+        const pf = playerFighter(s); const won = battle(pf, oppFighter(o)).winner === pf;
+        c.fat(s, 15);
+        if (won) { gain(s, 'atk', 4); addBond(s, 'leon', 7); return { text: '激戦の末、模擬戦に勝利した！\nレオン：「……ちっ。次は負けねえからな、覚えとけよ」', big: true }; }
+        gain(s, 'hp', 12); addBond(s, 'leon', 4); return { text: '模擬戦に敗れた…。でも打たれ強くなった気がする。\nレオン：「へっ、俺の勝ちだ。……まあ、悪くなかったぜ」' };
+      } },
+      fxChoice('今日は断る', { cond: 1, bond: 1 }, 'レオン：「はぁ？ 逃げんのかよ！ ……次は付き合えよな」', 'leon'),
+    ], { char: 'leon' }),
+    () => mkEvent('レオンの乱入', '演習場で自主練をしていると、レオンがずかずかとやって来た。\nレオン：「おい、ちんたらやってんじゃねえよ。俺と組め！」', [
+      fxChoice('一緒に練習する', { atk: 2, fatigue: 6, bond: 6 }, 'レオン：「へっ、少しはやるじゃねえか」', 'leon'),
+      fxChoice('自分のペースを守る', { fatigue: -2, bond: 2 }, 'レオン：「ちっ、つまんねえ奴」\n自分のペースで淡々と課題をこなした。', 'leon'),
+    ], { char: 'leon' }),
+    () => mkEvent('昼寝の邪魔', '中庭で昼寝していると、頭上から声がした。\nレオン：「こんなとこで寝てんのかよ。ずいぶん余裕じゃねえか」', [
+      fxChoice('言い返して特訓に付き合う', { atk: 1, fatigue: 10, bond: 6 }, 'レオン：「へっ、そうこなくちゃな！」', 'leon'),
+      fxChoice('寝たふりを続ける', { fatigue: -2, bond: 2 }, 'レオン：「……ちっ、起きねえし」\n足音が遠ざかっていった。', 'leon'),
+    ], { char: 'leon' }),
+    () => mkEvent('購買の争奪戦', '購買の最後の限定パンに手を伸ばすと、レオンと手がぶつかった。\nレオン：「おい、それ俺が先に目ぇつけてたんだぞ」', [
+      fxChoice('半分こしよう', { cond: 1, bond: 6 }, 'レオン：「……しょうがねえな。今回だけだぞ」\n二人で並んでパンをかじった。', 'leon'),
+      fxChoice('魔法の的当てで勝負だ', { atk: 2, acc: 1, fatigue: 6, bond: 4 }, 'レオン：「上等だ！ 負けても泣くんじゃねえぞ」', 'leon'),
+    ], { char: 'leon' }),
+  ],
+  mina: [
+    () => mkEvent('ミナ：薬草採取の誘い', 'ミナ：「裏山に珍しい薬草が生えてるんだって〜。ミナと一緒に行かない？」', [
+      fxChoice('一緒に行く', { hp: 10, fatigue: -6, bond: 6 }, '山歩きで体力がつき、薬草茶で疲れも取れた。\nミナ：「えへへ、いっぱい採れたね〜。また来ようね？」', 'mina'),
+      fxChoice('薬草学の本だけ借りる', { int: 2, bond: 2 }, 'ミナ：「うん、いいよ〜。読み終わったら感想聞かせてね？」', 'mina'),
+    ], { char: 'mina' }),
+    () => mkEvent('ミナの差し入れ', '部屋で休んでいると、ノックの音がした。\nミナ：「えへへ、ミナ特製の薬草クッキーだよ〜。一緒に食べよ？」', [
+      fxChoice('ありがたくいただく', { fatigue: -6, bond: 5 }, 'ミナ：「おいしい？ よかった〜」', 'mina'),
+      fxChoice('お茶を淹れてもてなす', { cond: 1, bond: 6 }, 'ミナ：「わ〜、ミナのためにありがと〜！ えへへ」', 'mina'),
+    ], { char: 'mina' }),
+    () => mkEvent('医務室の大掃除', 'ミナ：「うう〜、医務室の大掃除、ぜんぜん終わらないよ〜……手伝ってくれる？」', [
+      fxChoice('最後まで手伝う', { hp: 6, fatigue: 8, bond: 6 }, 'ミナ：「ほんとにありがと〜！ おかげでピカピカだよ〜」', 'mina'),
+      fxChoice('薬の整理だけ手伝う', { int: 2, bond: 4 }, 'ミナ：「助かる〜。お薬の名前、いっぱい覚えちゃったね〜」', 'mina'),
+    ], { char: 'mina' }),
+    () => mkEvent('雨宿り', '急な雨に降られ、ミナと一緒に軒下で雨宿りをした。\nミナ：「えへへ、雨の音って落ち着くね〜」', [
+      fxChoice('のんびり話して過ごす', { cond: 1, bond: 6 }, 'ミナ：「ミナね、こういう時間、すっごく好きだな〜」', 'mina'),
+      fxChoice('水魔法で雨を弾く練習をする', { acc: 2, bond: 4 }, 'ミナ：「わ〜、上手！ ミナにも教えて〜」', 'mina'),
+    ], { char: 'mina' }),
+  ],
+  sylva: [
+    () => mkEvent('温室の水やり', 'シルヴァ：「……ねえ、温室の水やり、手伝ってくれる？ この子たち、あなたの魔力が好きみたいなの」', [
+      fxChoice('手伝う', { def: 2, fatigue: 4, bond: 6 }, 'シルヴァ：「ほら、みんな喜んでるの。……わたしも、ね」', 'sylva'),
+      fxChoice('植物図鑑を借りる', { int: 2, bond: 3 }, 'シルヴァ：「うん。この子たちのこと、知ってくれるとうれしいの」', 'sylva'),
+    ], { char: 'sylva' }),
+    () => mkEvent('森のお散歩', 'シルヴァ：「裏庭の森、一緒にお散歩しよう？ 木の声、聞かせてあげるの」', [
+      fxChoice('ついていく', { hp: 8, fatigue: -4, bond: 6 }, '木漏れ日の中を、ゆっくり歩いた。\nシルヴァ：「……ね、聞こえた？ この子、あなたにありがとうって」', 'sylva'),
+      fxChoice('薬になる木の実を集める', { hp: 3, int: 1, bond: 4 }, 'シルヴァ：「その実はね、疲れに効くの。あなたにあげるね」', 'sylva'),
+    ], { char: 'sylva' }),
+    () => mkEvent('植物の暴走', '園芸部の食虫植物が暴れ出した！\nシルヴァ：「あっ、だめなの、その子お腹すいてるの……！」', [
+      fxChoice('魔法で押さえ込む', { atk: 2, def: 1, fatigue: 8, bond: 4 }, 'シルヴァ：「……ありがとう。でも、あとでその子にも謝ってね？」', 'sylva'),
+      fxChoice('シルヴァと一緒に餌で落ち着かせる', { cond: 1, bond: 6 }, 'シルヴァ：「……ふふ、落ち着いた。あなた、この子に好かれたの」', 'sylva'),
+    ], { char: 'sylva' }),
+    () => mkEvent('木漏れ日の昼寝', '中庭の大樹の下で、シルヴァが気持ちよさそうに眠っていた。', [
+      fxChoice('隣で一緒に休む', { fatigue: -6, bond: 6 }, '目を覚ましたシルヴァが、小さく笑った。\nシルヴァ：「……あ。一緒に、根っこを張ってたの？」', 'sylva'),
+      fxChoice('そっと上着をかけて自習に戻る', { int: 2, bond: 4 }, 'あとで、シルヴァがお礼にと花を一輪くれた。', 'sylva'),
+    ], { char: 'sylva' }),
+  ],
+  julius: [
+    () => mkEvent('学級委員の仕事', 'ユリウス：「すみません、学級日誌の整理を手伝っていただけませんか。一人では、どうにも終わらなくて」', [
+      fxChoice('手伝う', { int: 2, fatigue: 6, bond: 6 }, 'ユリウス：「助かりました。……君と話しながらだと、不思議と早く終わりますね」', 'julius'),
+      fxChoice('効率のいいやり方だけ教える', { acc: 1, bond: 3 }, 'ユリウス：「なるほど、その手がありましたか。ありがとうございます」', 'julius'),
+    ], { char: 'julius' }),
+    () => mkEvent('朝の礼拝堂', '早朝の礼拝堂で、ユリウスが光の魔法に祈りを捧げていた。\nユリウス：「おはようございます。……よければ、一緒にどうですか」', [
+      fxChoice('一緒に祈る', { cond: 1, bond: 6 }, '朝の光の中、しばらく二人で静かに過ごした。', 'julius'),
+      fxChoice('光魔法の型を教わる', { acc: 2, int: 1, bond: 4 }, 'ユリウス：「筋がいいですね。僕も、教えがいがあります」', 'julius'),
+    ], { char: 'julius' }),
+    () => mkEvent('勉強会のお誘い', 'ユリウス：「来週の小テスト、一緒に勉強しませんか。君と話すと、理解が深まる気がするんです」', [
+      fxChoice('参加する', { int: 2, fatigue: 6, bond: 6 }, 'ユリウス：「……楽しかったです。勉強が楽しいと思ったのは、久しぶりかもしれません」', 'julius'),
+      fxChoice('問題集だけもらう', { int: 2, bond: 2 }, 'ユリウス：「わかりました。わからないところがあれば、いつでも」', 'julius'),
+    ], { char: 'julius' }),
+    () => mkEvent('完璧じゃない日', 'ユリウスが、珍しく提出物を忘れて先生に叱られていた。\nユリウス：「……僕としたことが。情けないですね」', [
+      fxChoice('「たまにはいいよ」と笑う', { cond: 1, bond: 6 }, 'ユリウス：「……ふふ。君にそう言われると、本当にそんな気がしてきます」', 'julius'),
+      fxChoice('一緒に書き直す', { int: 2, fatigue: 4, bond: 4 }, 'ユリウス：「ありがとうございます。この借りは、必ず返します」', 'julius'),
+    ], { char: 'julius' }),
+  ],
+  chloe: [
+    () => mkEvent('屋上の儀式', '屋上で、クロエが怪しげな魔法陣を描いていた。\nクロエ：「フッ……見られたからには、貴様も儀式に参加するのだ」', [
+      fxChoice('参加する', { atk: 1, acc: 1, bond: 6 }, 'クロエ：「……ふ、ふん。なかなか様になっていたのだ」', 'chloe'),
+      fxChoice('魔法陣の構造を調べる', { int: 2, bond: 3 }, 'クロエ：「なっ、我の魔法陣を解析するとは……貴様、何者なのだ」', 'chloe'),
+    ], { char: 'chloe' }),
+    () => mkEvent('旧校舎の探索', 'クロエ：「旧校舎に、封印されし闇の書が眠っているのだ。……べ、別に一人で行くのが怖いわけではないのだ」', [
+      fxChoice('ついていく', { acc: 2, fatigue: 6, bond: 6 }, '物音がするたびに、クロエが袖をつかんできた。\nクロエ：「こ、これは貴様を守るためなのだ！」', 'chloe'),
+      fxChoice('入口で待っている', { cond: 1, bond: 3 }, '十分後、クロエが半泣きで戻ってきた。', 'chloe'),
+    ], { char: 'chloe' }),
+    () => mkEvent('眼帯の行方', 'クロエが、眼帯を落として慌てて探し回っていた。\nクロエ：「わ、我の封印が……！ 見つからぬのだ……！」', [
+      fxChoice('一緒に探す', { fatigue: 4, bond: 6 }, '植え込みの中から、ようやく眼帯を見つけた。\nクロエ：「……恩に着るのだ。本当に、なのだ」', 'chloe'),
+      fxChoice('代わりのハンカチを貸す', { cond: 1, bond: 4 }, 'クロエ：「……花柄なのだ。……べ、別に嫌ではないのだ」', 'chloe'),
+    ], { char: 'chloe' }),
+    () => mkEvent('闇の供物', 'クロエ：「我が闇の力で作りし供物……食すがよい」\n真っ黒なクッキーを差し出された。', [
+      fxChoice('全部食べる', { hp: 8, fatigue: 4, bond: 6 }, '見た目に反して、とてもおいしかった。\nクロエ：「……ほ、本当か？ ……また作ってやらんこともないのだ」', 'chloe'),
+      fxChoice('一枚だけいただく', { hp: 3, bond: 4 }, 'クロエ：「フッ、闇の味を知るには、一枚で十分なのだ」', 'chloe'),
+    ], { char: 'chloe' }),
+  ],
+};
+function starEvent(s, c) {
+  const stars = Object.keys(CHARS).filter(k => CHARS[k].group === 'star');
+  const cid = pick(stars);                                   // 五星から均等に1人
+  s.seen = s.seen || {}; const seen = s.seen[cid] = s.seen[cid] || [];
+  let cand = STAR_EVENTS[cid].map((_, i) => i).filter(i => !seen.includes(i));
+  if (!cand.length) { seen.length = 0; cand = STAR_EVENTS[cid].map((_, i) => i); }   // 全部見たら最初から
+  const i = pick(cand); seen.push(i);
+  return STAR_EVENTS[cid][i](s, c);
+}
+
+// ===== キャラクターイベント（ランダム・選択式） =====
+function charEvents(s) {
+  const t = monthIdx(s.turn); const f = s.flags;
+  const fat = (s, v) => { s.fatigue = clamp(s.fatigue + v, 0, 100); };
+  const E = {
+    celia: () => mkEvent('セリア先輩：生徒会の緊急招集', '学院祭の準備が大ピンチらしい。\nセリア先輩：「ごめんなさい、このままだと間に合いそうにないの。手を貸してもらえるかしら？」', [
+      { label: '徹夜で手伝う', hint: '精度+6・知力+4・セリアとの絆+10・疲労+14', fn: s => { gain(s, 'acc', 6); gain(s, 'int', 4); addBond(s, 'celia', 10); fat(s, 14); return '飾り付けの魔法を何百回も唱えた。\nセリア先輩：「本当に助かったわ。この恩は忘れないわね」'; } },
+      { label: '用事があると断る', hint: '疲労-5', fn: s => { fat(s, -5); return 'セリア先輩：「そう……無理を言ってごめんなさいね」\n申し訳なく思いつつ、早めに休んだ。'; } },
+    ]),
+    ord: () => { const rs = pick(SPELLS.filter(x => x.rare && !(s.spells.find(y => y.id === x.id)))); if (!rs) return null;
+      const att = { kind: 'spell', id: rs.id, base: 0.45, src: 'ord', retryText: '禁書の内容が夢に出てきた。もう一度読み解けるかもしれない。', okText: 'オルド先生：「……ふぉっふぉ。見なかったことにしておいてやろう」' };
+      return mkEvent('オルド先生：禁書庫の鍵', '研究室の机に、禁書庫の鍵が置きっぱなしになっている…。', [
+        attemptChoice(att, 'こっそり忍び込んで読む', '疲労+10', s => fat(s, 10)),
+        { label: '先生に届ける', hint: '知力+8・オルド先生との絆+10（確実）', fn: s => { gain(s, 'int', 8); addBond(s, 'ord', 10); return 'オルド先生：「ほう、誠実じゃのう。褒美に特別講義をしてやろう」'; } },
+      ]); },
+    garde: () => mkEvent('ガルド先輩：決闘部の体験入部', '決闘部の部長、ガルド先輩が、ぼそりと声をかけてきた。\nガルド：「……来るか。……自分が、相手をする」', [
+      { label: '参加する', hint: '魔法防御+10・体力+18・ガルドとの絆+12・疲労+14', fn: s => { gain(s, 'def', 10); gain(s, 'hp', 18); addBond(s, 'garde', 12); fat(s, 14); return 'ひたすら攻撃魔法を受け止める稽古をした。\nガルド：「……筋がいい。……また来い」'; } },
+      { label: '見学だけする', hint: '精度+5', fn: s => { gain(s, 'acc', 5); return '部員たちの魔法の軌道を観察した。'; } },
+    ]),
+    luka: () => { if (!isUnlocked(s, 'luka')) return null; const sp = pick(SPELLS.filter(x => !x.rare && !(s.spells.find(y => y.id === x.id)))); if (!sp) return null;
+      const att = { kind: 'spell', id: sp.id, base: 0.55, src: 'luka', retryText: 'ルカ：「センパイ、この前の魔導書、続きの巻が手に入ったんだよね♪」', okText: 'ルカ：「ほらね、ボクの目利きは確かでしょ、センパイ？」' };
+      return mkEvent('ルカ：怪しい露店', 'ルカがにやりと笑う。\nルカ：「センパイ、掘り出し物の魔導書、今なら特別価格さ♪ ボクを信じてみる？」', [
+        attemptChoice(att, '魔導書を買って読む'),
+        { label: '情報だけ買う', hint: '精度+4・ルカとの絆+8（確実）', fn: s => { gain(s, 'acc', 4); addBond(s, 'luka', 8); return 'ルカ：「毎度あり♪ センパイ、次の試験相手はね、詠唱の前に左手が動くクセがあるんだよ」'; } },
+        { label: '立ち去る', hint: '何も起きない', fn: () => '君子危うきに近寄らず。' },
+      ]); },
+    noir: () => { if (has(s, 'noir_bless')) return null;
+      const att = { kind: 'passive', id: 'noir_bless', base: 0.35, retryText: 'あの黒猫が、また窓辺からこちらを見ている。', okText: 'ノワール：「……ふふ、ようやく追いつきましたのね。わたくしの加護、大切になさいませ」' };
+      return mkEvent('謎の黒猫ノワール', '金色の瞳の黒猫が、ついて来いと言わんばかりに尻尾を振った。', [
+        attemptChoice(att, '後を追う', '疲労+10', s => fat(s, 10)),
+        { label: 'ミルクをあげる', hint: '調子↑・次にノワールを追う時の成功率+20%', fn: s => { s.cond = Math.min(4, s.cond + 1); s.flags.noirFed = 1; return '黒猫は満足そうに喉を鳴らし、どこかへ消えた。'; } },
+      ], { big: true }); },
+  };
+  const avail = Object.keys(E).filter(k => !f['ce_' + k] || t - f['ce_' + k] >= 3);
+  if (!avail.length) return null;
+  const k = pick(avail); const ev = E[k]();
+  if (ev) f['ce_' + k] = t;
+  return ev;
+}
+
+// ===== ターン開始時イベント（選択式） =====
+// 各イベントは run(s, c) で「条件を満たせば c.L に積む」。発生判定の順序＝乱数を引く順序なので、
+// 並び順（シナリオの turnEventOrder）を変えると同じ種でも結果が変わる点に注意。
+// c = { L: 積むリスト, t: 通算の月, f: s.flags, fat(s,v): 疲労増減, cond(s,v): 調子増減 }
+const EVENTS = {
+  milestones: { desc: '絆の節目（イベントで絆が上がった分）', run(s, c) {
+    for (const k of Object.keys(CHARS)) c.L.push(...milestoneEvents(s, k, false));
+  } },
+  starEvent: { desc: '五星のランダムイベント', run(s, c) {
+    if (rnd() < SC.starEventRate) c.L.push(starEvent(s, c));
+  } },
+  morning: { desc: '朝の気分（汎用）', run(s, c) {
+    const { L, t, f, fat, cond } = c;
+  if (rnd() < wk(0.15)) {
+    if (rnd() < 0.5) L.push(mkEvent('晴れやかな朝', '目覚めがいい。体が軽い。', [
+      { label: '早朝練習をする', hint: 'ランダムなステータス+5・疲労+6', fn: s => { const k = pick(STATS); gain(s, k, k === 'hp' ? 15 : 5); fat(s, 6); return '朝の中庭でひと汗流した。'; } },
+      { label: 'ゆっくり朝食をとる', hint: '調子↑', fn: s => { cond(s, 1); return '焼きたてのパンと紅茶で、最高の一日が始まった。'; } },
+    ]));
+    else L.push(mkEvent('気だるい朝', 'なんとなく気分が乗らない…', [
+      { label: '気合で乗り切る', hint: '調子そのまま・疲労+10', fn: s => { fat(s, 10); return '顔を洗って気合を入れ直した。'; } },
+      { label: '無理せず流す', hint: '調子↓・疲労-5', fn: s => { cond(s, -1); fat(s, -5); return '今日は省エネでいこう。'; } },
+    ]));
+  }
+  } },
+  commonerLetter: { desc: '【平民】故郷からの手紙', run(s, c) {
+    const { L, t, f, fat, cond } = c;
+  if (s.origin === 'commoner' && !f.grit && t >= 10 && t <= 22 && rnd() < wk(0.12)) {
+    f.grit = 1;
+    const att = { kind: 'passive', id: 'commoner_grit', base: 0.7, retryText: '故郷の手紙を読み返した。胸の奥の決意が、また熱を帯びる。' };
+    L.push(mkEvent('【平民】故郷からの手紙', '実家から、家族の寄せ書きとお菓子の包みが届いた。', [
+      attemptChoice(att, '返事を書き、決意を新たにする'),
+      { label: 'お菓子をみんなに配る', hint: '全員との絆+12・調子↑（確実）', fn: s => { for (const k in s.bonds) addBond(s, k, 12); cond(s, 1); return '素朴な焼き菓子は、意外なほど好評だった。'; } },
+    ]));
+  }
+  } },
+  nobleTutor: { desc: '【貴族】家庭教師', run(s, c) {
+    const { L, t, f, fat, cond } = c;
+  if (s.origin === 'noble' && !f.tutor && t === 4) {
+    f.tutor = 1;
+    L.push(mkEvent('【貴族】家庭教師の来訪', '実家から名高い家庭教師が派遣された。何を教わる？', [
+      { label: '魔導理論の講義', hint: '知力+14・精度+6', fn: s => { gain(s, 'int', 14); gain(s, 'acc', 6); return '高度な魔導理論を叩き込まれた。'; } },
+      { label: '決闘術の稽古', hint: '魔法攻撃+10・体力+30', fn: s => { gain(s, 'atk', 10); gain(s, 'hp', 30); return '貴族流の決闘作法を身につけた。'; } },
+      { label: '結界術の指導', hint: '魔法防御+14・精度+6', fn: s => { gain(s, 'def', 14); gain(s, 'acc', 6); return '一族伝来の結界術を教わった。'; } },
+    ]));
+  }
+  } },
+  nobleBall: { desc: '【貴族】舞踏会', run(s, c) {
+    const { L, t, f, fat, cond } = c;
+  if (s.origin === 'noble' && !f.ball && t >= 15 && t <= 26 && rnd() < wk(0.15)) {
+    f.ball = 1;
+    const att = { kind: 'passive', id: 'noble_blood', base: 0.7, retryText: '次の夜会の招待状が届いた。今度こそ家名にふさわしい姿を。' };
+    L.push(mkEvent('【貴族】学院の舞踏会', '年に一度の舞踏会。家名を背負う者として、どう振る舞う？', [
+      attemptChoice(att, '華やかに踊る', '疲労+10', s => fat(s, 10)),
+      { label: '壁際で人々を観察する', hint: '精度+12・知力+8（確実）', fn: s => { gain(s, 'acc', 12); gain(s, 'int', 8); return '人の癖や視線の動きから、多くを学んだ。'; } },
+    ]));
+  }
+  } },
+  orphanAwaken: { desc: '【孤児】覚醒', run(s, c) {
+    const { L, t, f, fat, cond } = c;
+  if (s.origin === 'orphan' && !f.awaken && t >= 13 && t <= 33 && rnd() < wk(s.cond <= 1 || s.fatigue >= 50 ? 0.16 : 0.07)) {
+    f.awaken = 1; const tn = s.talents.map(k => STAT_NAME[k]).join('・');
+    L.push(mkEvent('【孤児】覚醒', '追い詰められた夜、胸の奥で眠っていた魔力が暴れ出した――。', [
+      { label: '力を解き放つ', hint: `${tn}が大幅上昇・特性【${PASSIVES.orphan_soul.n}】：${PASSIVES.orphan_soul.d}`, fn: s => { addPassive(s, 'orphan_soul'); for (const k of s.talents) gain(s, k, k === 'hp' ? 75 : 25); return { text: '奔流のような魔力を、ついに自分のものにした。', passive: 'orphan_soul', big: true }; } },
+      { label: '力を静かに抑え込む', hint: '全ステータス+10・疲労-30', fn: s => { for (const k of STATS) gain(s, k, k === 'hp' ? 30 : 10); fat(s, -30); return '荒ぶる魔力をなだめ、全身に巡らせた。'; } },
+    ], { big: true }));
+  }
+  } },
+  heirBook: { desc: '【大魔法使いの子】父の魔導書', run(s, c) {
+    const { L, t, f, fat, cond } = c;
+  if (s.origin === 'heir' && !f.book && t === 3) {
+    f.book = 1;
+    const opts = s.affinity.map(e => SPELLS.find(x => x.el === e && x.rare));
+    L.push(mkEvent('【大魔法使いの子】父の魔導書', '父の遺した魔導書。読み解けるのは、どちらか一章だけだ。', [
+      ...opts.map(rs => ({ label: `【${rs.n}】の章を読む`, hint: `${ELEM[rs.el].n}のレア魔法：${spellDesc(rs)}（確実）`, fn: s => { addSpell(s, rs.id); return { text: `秘術【${rs.n}】を読み解いた！`, spell: rs.id, big: true }; } })),
+      { label: '表紙を閉じ、自分の力で学ぶ', hint: '知力+15・全ステータスの成長+5%', fn: s => { gain(s, 'int', 15); for (const k of STATS) s.grow[k] *= 1.05; return '父の影ではなく、自分の道を歩むと決めた。'; } },
+    ], { big: true }));
+  }
+  } },
+  heirPressure: { desc: '【大魔法使いの子】重圧', run(s, c) {
+    const { L, t, f, fat, cond } = c;
+  if (s.origin === 'heir' && !f.press && t === 20) {
+    f.press = 1;
+    const att = { kind: 'passive', id: 'heir_blood', base: 0.7, retryText: '父の杖を握ると、血の奥で何かが脈打った。' };
+    L.push(mkEvent('【大魔法使いの子】偉大な名の重圧', '「あの大魔法使いの子なのに」――周囲の期待が重くのしかかる。', [
+      attemptChoice(att, '期待に応えてみせる', '調子↓↓・疲労+20', s => { cond(s, -2); fat(s, 20); }),
+      { label: '自分は自分だと割り切る', hint: '調子↑・全ステータス+4（確実）', fn: s => { cond(s, 1); for (const k of STATS) gain(s, k, k === 'hp' ? 12 : 4); return '肩の力が抜け、魔法が素直に応えてくれるようになった。'; } },
+    ]));
+  }
+  } },
+  charEvent: { desc: 'キャラクターイベント', run(s, c) {
+    if (rnd() < wk(0.3)) { const ce = charEvents(s); if (ce) c.L.push(ce); }
+  } },
+  generic: { desc: '汎用ランダムイベント', run(s, c) {
+    const { L, fat, cond } = c;
+  if (rnd() < wk(0.15)) {
+    const ev = pick(['book', 'cold', 'bread', 'beast', 'night']);
+    if (ev === 'book') {
+      const two = SPELLS.filter(x => !x.rare).sort(() => rnd() - 0.5).slice(0, 2);
+      L.push(mkEvent('図書館の古書', '書架の奥で、埃をかぶった魔導書を見つけた。', [
+        ...two.map(sp => attemptChoice({ kind: 'spell', id: sp.id, base: 0.65, src: 'ord', retryText: '図書館で、あの古書の続きを見つけた。' }, `【${sp.n}】のページを読む`)),
+        { label: 'オルド先生に届ける', hint: '知力+6・オルド先生との絆+8（確実）', fn: s => { gain(s, 'int', 6); addBond(s, 'ord', 8); return '「ほう、よく見つけたな」と感心された。'; } },
+      ]));
+    }
+    if (ev === 'cold') L.push(mkEvent('季節外れの風邪', 'くしゃみが止まらない…。体調を崩してしまった。', [
+      { label: '無理して授業に出る', hint: 'ランダムなステータス+6・疲労+20・調子↓', fn: s => { const k = pick(STATS); gain(s, k, k === 'hp' ? 18 : 6); fat(s, 20); cond(s, -1); return 'ふらふらになりながらも授業を受けきった。'; } },
+      { label: '医務室で寝る', hint: '調子↓・疲労-10', fn: s => { cond(s, -1); fat(s, -10); return '医務室のベッドで、ぐっすり眠った。'; } },
+    ]));
+    if (ev === 'bread') L.push(mkEvent('購買の限定パン', '最後の一個の限定メロンパンを手に入れた！', [
+      { label: '自分で食べる', hint: '調子↑', fn: s => { cond(s, 1); return '幸せの味がした。'; } },
+      { label: '同級生におすそ分け', hint: '五星の誰かとの絆+8', fn: s => { const k = pick(Object.keys(CHARS).filter(x => CHARS[x].group === 'star')); addBond(s, k, 8); return `${CHARS[k].n}と半分こしたパンは、なぜかいつもよりおいしかった。`; } },
+      { label: 'ルカと情報交換', hint: 'ルカとの絆+8・精度+4', fn: s => { addBond(s, 'luka', 8); gain(s, 'acc', 4); return 'パンと引き換えに、とっておきの噂話を聞いた。'; } },
+    ].filter(c => isUnlocked(s, 'luka') || !c.label.includes('ルカ'))));
+    if (ev === 'beast') L.push(mkEvent('魔法生物の脱走', '温室からマンドラゴラが逃げ出した！', [
+      { label: '捕獲を手伝う', hint: '精度+6・体力+15・疲労+8', fn: s => { gain(s, 'acc', 6); gain(s, 'hp', 15); fat(s, 8); return '泥だらけになりながら、見事捕まえた。'; } },
+      { label: '生態を観察する', hint: '知力+8', fn: s => { gain(s, 'int', 8); return '逃げ方の法則を記録し、レポートにまとめた。'; } },
+    ]));
+    if (ev === 'night') L.push(mkEvent('眠れない夜', '目が冴えて眠れない。どう過ごす？', [
+      { label: '攻撃魔法の自主練', hint: '魔法攻撃+7・疲労+10', fn: s => { gain(s, 'atk', 7); fat(s, 10); return '月明かりの下、的に向かって魔法を撃ち続けた。'; } },
+      { label: '瞑想する', hint: '知力+5・疲労-5', fn: s => { gain(s, 'int', 5); fat(s, -5); return '静かに魔力の流れを見つめた。'; } },
+      { label: '羊を数えて寝る', hint: '調子↑', fn: s => { cond(s, 1); return '三百匹目あたりで記憶が途切れた。'; } },
+    ]));
+  }
+  } },
+  retry: { desc: '習得の再挑戦', run(s, c) {
+    const { L } = c;
+  if (s.pending.length && rnd() < (L.length ? wk(0.15) : wk(0.3))) L.push(retryEvent(s, pick(s.pending)));
+  } },
+};
+
+// 入学直後の週か（ランダムな出来事を起こさない）
+function isQuiet(s) { return s.turn <= (SC.quietWeeks || 0); }
+function turnEvents(s) {
+  const L = []; const t = monthIdx(s.turn); const f = s.flags;
+  rollAvailability(s);
+  cleanPending(s);
+  if (isQuiet(s)) return L;
+  const c = { L, t, f, fat: (s, v) => { s.fatigue = clamp(s.fatigue + v, 0, 100); }, cond: (s, v) => { s.cond = clamp(s.cond + v, 0, 4); } };
+  for (const id of SC.turnEventOrder) (SC.events[id] || EVENTS[id]).run(s, c);
+  return L;
+}
+
+
+// ===== 魔法の性能計算（表示用・戦闘と同じ式） =====
+function equipSyn(s) { return synergyOf(affOf(s), s.equip.map(id => SPELL[id].el)); }
+function spellStats(s, entry, enemyDef) {
+  const sp = entry.id === 'basic' ? BASIC : SPELL[entry.id]; const lv = entry.lv || 1;
+  const syn = equipSyn(s); const P = (id) => s.passives.includes(id);
+  const lvMul = 1 + 0.12 * (lv - 1);
+  const ctRed = Math.min(0.3, s.stats.int / 800) + (P('flow') ? 0.1 : 0);
+  const ct = Math.max(1, Math.round((sp.ct - (lv >= 3 ? 1 : 0)) * (1 - ctRed)));
+  const potMul = lvMul * (P('heir_blood') ? 1.12 : 1) * (P('seal_ord') ? 1.1 : 1) * affPower(affOf(s), sp.el);
+  const def = s.stats.def;
+  const r = { sp, lv, ct, baseCt: sp.ct, pow: +(sp.pow ? sp.pow * potMul : 0).toFixed(2) };
+  if (sp.t === 'dmg') {
+    let atk = s.stats.atk * (P('seal_celia') ? 1.1 : 1) * sp.pow * potMul + (sp.defScale ? def * sp.defScale : 0);
+    if (syn.includes('fire')) atk *= 1.10;
+    r.hit = Math.round(atk * 100 / (100 + enemyDef));
+    r.hits = sp.hits || 1;
+    r.total = r.hit * r.hits + (sp.burn ? Math.round(s.stats.atk * sp.burn * 100 / (100 + enemyDef)) * 4 : 0);
+    r.perTick = +(r.total / ct).toFixed(1);
+  } else if (sp.t === 'heal') {
+    let h = s.stats.hp * sp.val * potMul + s.stats.int * 0.4; if (syn.includes('light')) h *= 1.3; r.heal = Math.round(h);
+  } else if (sp.t === 'shield') {
+    let v = def * sp.val * potMul + 15; r.shield = Math.round(v);
+  }
+  return r;
+}
+function nextEnemyDef(turn) { return SC.nextEnemyDef(monthIdx(turn)); }
+
+
+// ===== 戦闘 =====
+function makeFighter(name, stats, spells, equip, passives, el, aff) {
+  stats = Object.fromEntries(Object.entries(stats).map(([k, v]) => [k, Math.round(v)]));
+  const eqSp = equip.map(id => { const sp = spells.find(x => x.id === id); return { ...SPELL[id], lv: sp ? sp.lv : 1 }; });
+  const syn = synergyOf(aff, eqSp.map(x => x.el));
+  const P = (id) => passives.includes(id);
+  let ctRed = Math.min(0.3, stats.int / 800) + (P('flow') ? 0.1 : 0);
+  const slotsArr = [...eqSp, BASIC].map(sp => {
+    const lvMul = 1 + 0.12 * ((sp.lv || 1) - 1);
+    const ct = Math.max(1, Math.round((sp.ct - ((sp.lv || 1) >= 3 ? 1 : 0)) * (1 - ctRed)));
+    return { sp, lvMul, ct, cd: P('quick') ? 0 : Math.ceil(ct / 2) };
+  });
+  const mhp = Math.round(stats.hp * (P('bulwark') ? 1.15 : 1) * (P('seal_garde') ? 1.1 : 1));
+  return { name, el, aff, base: { ...stats }, maxHp: mhp, hp: mhp, shield: 0, slots: slotsArr, syn, passives,
+    buffs: [], burn: 0, burnT: 0, healCount: 0, gutsUsed: false, P };
+}
+
+function eff(f, k) {
+  let v = f.base[k];
+  if (k === 'acc') { if (f.P('focus')) v += 15; if (f.syn.includes('water')) v += 10; if (f.P('seal_luka')) v += 12; }
+  if (k === 'atk' && f.P('seal_celia')) v *= 1.1;
+  if (k === 'def' && f.P('seal_garde')) v *= 1.1;
+  for (const b of f.buffs) {
+    if (b.stat !== k) continue;
+    if (k === 'acc') v += b.val; else v *= (1 + b.val);
+  }
+  return Math.max(1, v);
+}
+const buffVal = (f, stat) => f.buffs.filter(b => b.stat === stat).reduce((a, b) => a + b.val, 0);
+
+function battle(A, B, maxT = 80) {
+  const log = [];
+  const push = (e) => log.push({ ...e, hA: Math.max(0, Math.round(A.hp)), hB: Math.max(0, Math.round(B.hp)), sA: Math.round(A.shield), sB: Math.round(B.shield) });
+  for (const f of [A, B]) if (f.intro) push({ t: 0, who: f.name, text: f.intro, kind: 'buff' });
+  for (const f of [A, B]) if (f.P('intel')) { const o = f === A ? B : A; o.slots.forEach(x => x.cd += 1); push({ t: 0, who: f.name, text: `${f.name}の情報戦！ ${o.name}の詠唱が遅れる（CT+1）`, kind: 'debuff' }); }
+  for (let t = 1; t <= maxT; t++) {
+    // 精度が高い方が先に動く。同値ならランダム（以前は常に A＝プレイヤーが先で、同値の対戦に偏りがあった）
+    const ea = eff(A, 'acc'), eb = eff(B, 'acc');
+    const order = ea > eb || (ea === eb && rnd() < 0.5) ? [A, B] : [B, A];
+    for (const me of order) {
+      const op = me === A ? B : A;
+      if (me.hp <= 0 || op.hp <= 0) continue;
+      // 継続効果
+      if (me.burnT > 0) {
+        const d = Math.round(me.burn); dealRaw(me, d); me.burnT--;
+        push({ t, who: me.name, text: `${me.name}は${me.burnDrain ? '毒' : '火傷'}で${d}ダメージ`, kind: 'dot' });
+        if (me.burnDrain && op.hp > 0) { op.hp = Math.min(op.maxHp, op.hp + d); push({ t, who: op.name, text: `${op.name}は毒から${d}吸収`, kind: 'heal' }); }
+        if (me.hp <= 0) break;
+      }
+      // 再生（世界樹の恵み・自然治癒）
+      const rg = buffVal(me, 'regen') + (me.P('regrowth') ? 0.01 : 0);
+      if (rg > 0 && me.hp < me.maxHp) { const h = Math.round(me.maxHp * rg); me.hp = Math.min(me.maxHp, me.hp + h); push({ t, who: me.name, text: `${me.name}は再生で${h}回復`, kind: 'heal' }); }
+      me.buffs.forEach(b => b.dur--); me.buffs = me.buffs.filter(b => b.dur > 0);
+      me.slots.forEach(s => s.cd = Math.max(0, s.cd - 1));
+      {
+        // 準備完了の魔法のうち、最もCTが長い（重い）魔法を優先。同CTなら装備順
+        let ready = null;
+        for (const s of me.slots) if (s.cd <= 0 && usable(me, s.sp) && (!ready || s.ct > ready.ct)) ready = s;
+        if (ready) { ready.cd = ready.ct; cast(me, op, ready, t, push); }
+      }
+    }
+    if (A.hp <= 0 || B.hp <= 0) break;
+  }
+  const clean = log.filter(Boolean);
+  let win;
+  if (A.hp <= 0 && B.hp > 0) win = B; else if (B.hp <= 0 && A.hp > 0) win = A;
+  else win = (A.hp / A.maxHp >= B.hp / B.maxHp) ? A : B;
+  return { winner: win, log: clean, timeout: A.hp > 0 && B.hp > 0 };
+}
+function usable(me, sp) {
+  if (sp.t === 'heal') return me.hp < me.maxHp * 0.75;
+  if (sp.t === 'shield') return me.shield <= 0;
+  if (sp.t === 'buff') return !me.buffs.find(b => b.src === sp.id) && (sp.stat !== 'regen' || me.hp < me.maxHp * 0.85);
+  return true;
+}
+function dealRaw(tg, d) {
+  if (tg.shield > 0) { const a = Math.min(tg.shield, d); tg.shield -= a; d -= a; }
+  tg.hp -= d;
+  if (tg.hp <= 0 && tg.P('guts') && !tg.gutsUsed) { tg.hp = 1; tg.gutsUsed = true; return 'guts'; }
+  return null;
+}
+function cast(me, op, slot, t, push) {
+  const sp = slot.sp; const E = (x) => ({ t, who: me.name, el: sp.el, ...x });
+  const potMul = slot.lvMul * (me.P('heir_blood') ? 1.12 : 1) * (me.P('seal_ord') ? 1.1 : 1) * affPower(me.aff, sp.el);
+  if (sp.t === 'dmg') {
+    const hits = sp.hits || 1; let total = 0, hitN = 0, crits = 0, gutsMsg = false;
+    for (let h = 0; h < hits; h++) {
+      const hitRate = clamp(82 + (eff(me, 'acc') - eff(op, 'acc')) * 0.3 + (sp.accB || 0) - buffVal(op, 'eva') - (op.P('swift') ? 12 : 0), 40, 99);
+      if (rnd() * 100 >= hitRate) continue;
+      hitN++;
+      let atk = eff(me, 'atk') * sp.pow * potMul + (sp.defScale ? eff(me, 'def') * sp.defScale : 0);
+      const varW = Math.max(4, 20 - eff(me, 'acc') / 10) / 100;
+      atk *= 1 + (rnd() * 2 - 1) * varW;
+      if (me.syn.includes('fire')) atk *= 1.10;
+      if (me.P('adversity') && me.hp < me.maxHp * 0.3) atk *= 1.35;
+      if (me.P('orphan_soul') && me.hp < me.maxHp * 0.5) atk *= 1.25;
+      const critR = 0.05 + eff(me, 'acc') / 2000 + (sp.crit || 0) + (me.syn.includes('dark') ? 0.1 : 0) + (me.P('sniper') ? 0.1 : 0) + (me.P('noir_bless') ? 0.08 : 0) + (me.P('seal_luka') ? 0.05 : 0);
+      if (rnd() < critR) { atk *= 1.8; crits++; }
+      let dmg = atk * (100 / (100 + eff(op, 'def'))) * matchMul(sp.el, op);
+      if (op.P('wall')) dmg *= 0.9;
+      if (op.P('noble_blood')) dmg *= 0.92;
+      if (op.P('noir_bless')) dmg *= 0.95;
+      if (op.P('orphan_soul') && op.hp < op.maxHp * 0.5) dmg *= 0.85;
+      dmg = Math.max(1, Math.round(dmg));
+      if (dealRaw(op, dmg) === 'guts') gutsMsg = true;
+      total += dmg;
+      if (op.hp <= 0) break;
+    }
+    const mm = matchMul(sp.el, op);
+    let text;
+    if (!hitN) text = `${me.name}の【${sp.n}】！ しかし外れた`;
+    else text = `${me.name}の【${sp.n}】！ ${hits > 1 ? hitN + 'ヒット ' : ''}${crits ? '会心！ ' : ''}${op.name}に${total}ダメージ${mm > 1 ? '（効果抜群！）' : mm < 1 ? '（いまひとつ）' : ''}`;
+    push(E({ text, kind: hitN ? 'hit' : 'miss', sid: sp.id, dmg: total, hitN, hits }));
+    if (gutsMsg) push(E({ text: `${op.name}はど根性で踏みとどまった！`, kind: 'buff' }));
+    if (hitN && sp.burn) { op.burn = eff(me, 'atk') * sp.burn * (100 / (100 + eff(op, 'def'))) * mm * (me.syn.includes('wood') ? 1.3 : 1); op.burnT = 4; op.burnDrain = !!sp.drain; }
+    if (hitN && sp.delay) { const d = sp.delay; op.slots.forEach(s => s.cd += d); push(E({ text: `${op.name}の詠唱が乱れた（CT+${d}）`, kind: 'debuff' })); }
+    if (hitN && sp.lifesteal) { const h = Math.round(total * sp.lifesteal); me.hp = Math.min(me.maxHp, me.hp + h); push(E({ text: `${me.name}はHPを${h}吸収`, kind: 'heal', drain: h, sid2: sp.id })); }
+    if (sp.self) { const d = Math.round(me.maxHp * sp.self); me.hp = Math.max(1, me.hp - d); push(E({ text: `${me.name}は反動で${d}ダメージ`, kind: 'dot' })); }
+  } else if (sp.t === 'heal') {
+    let h = me.maxHp * sp.val * potMul * Math.pow(0.8, me.healCount) + me.base.int * 0.4;
+    if (me.syn.includes('light')) h *= 1.3; h = Math.round(h); me.healCount++;
+    me.hp = Math.min(me.maxHp, me.hp + h); push(E({ text: `${me.name}の【${sp.n}】！ HPが${h}回復`, kind: 'heal', sid: sp.id, heal: h }));
+  } else if (sp.t === 'shield') {
+    let v = eff(me, 'def') * sp.val * potMul + 15; v = Math.round(v);
+    me.shield = v; push(E({ text: `${me.name}の【${sp.n}】！ ${v}のバリアを張った`, kind: 'buff', sid: sp.id, shield: v }));
+  } else if (sp.t === 'buff') {
+    const dur = sp.dur + (me.syn.includes('light') ? 2 : 0);
+    me.buffs.push({ stat: sp.stat, val: sp.stat === 'eva' ? sp.val : sp.val * slot.lvMul * (sp.stat === 'regen' && me.syn.includes('wood') ? 1.3 : 1), dur, src: sp.id });
+    push(E({ sid: sp.id, text: `${me.name}の【${sp.n}】！ ${spellDesc(sp).split('・').slice(1).join('・')}`, kind: 'buff' }));
+  } else if (sp.t === 'debuff') {
+    const dur = sp.dur + (me.syn.includes('light') ? 2 : 0);
+    op.buffs = op.buffs.filter(b => b.src !== sp.id);
+    op.buffs.push({ stat: sp.stat, val: sp.val, dur, src: sp.id });
+    push(E({ sid: sp.id, text: `${me.name}の【${sp.n}】！ ${op.name}を弱体化`, kind: 'debuff' }));
+  }
+}
+
+// ===== 対戦相手（共通の仕組み。強さや名前はシナリオが持つ） =====
+// over で名前・属性・特性などを上書きできる（決勝の相手を五星から作るときに使う）
+function makeOpponent(key, over) {
+  const b = { ...SC.opponents[key], ...(over || {}) };
+  const el = b.el || pick(ELEMS);
+  const name = b.name || pick(SC.oppNames[key]);
+  const jit = () => 0.94 + rnd() * 0.12;
+  const st = { hp: Math.round(b.hp * jit()), atk: Math.round(b.atk * jit()), int: Math.round(b.int * jit()), def: Math.round(b.def * jit()), acc: Math.round(b.acc * jit()) };
+  // 属性ビルド: メイン属性3 + サブ
+  const main = SPELLS.filter(x => x.el === el && (b.rare || !x.rare));
+  const sub = SPELLS.filter(x => x.el !== el && !x.rare);
+  let chosen = [...main].sort(() => rnd() - 0.5).slice(0, Math.min(3 + (b.rare > 1 ? 1 : 0), main.length));
+  while (chosen.length < b.n) { const c = pick(sub); if (!chosen.includes(c)) chosen.push(c); }
+  chosen.sort((x, y) => (y.t === 'dmg' ? y.pow * (y.hits || 1) : 0.5) / y.ct - (x.t === 'dmg' ? x.pow * (x.hits || 1) : 0.5) / x.ct);
+  const sps = chosen.map(x => ({ id: x.id, lv: b.lv }));
+  return { key, name, stats: st, spells: sps, equip: sps.map(x => x.id), passives: [...(b.passives || [])], el, sub: b.sub || null };
+}
+// key を渡すと、そのラウンドがパートナーの声援の対象か判定する（シナリオの partnerCheer）
+function playerFighter(s, key) {
+  const f = makeFighter(s.name, s.stats, s.spells, s.equip, s.passives, s.affinity[0], affOf(s));
+  const pc = SC.partnerCheer;
+  if (s.partner && key && pc && pc.rounds.includes(key)) {
+    f.buffs.push({ stat: 'atk', val: pc.atk, dur: 9999, src: 'cheer' });
+    f.intro = `${CHARS[s.partner].n}の声援を受けて、魔力が高まる！（魔法攻撃+${Math.round(pc.atk * 100)}%）`;
+  }
+  return f;
+}
+function oppFighter(o) { return makeFighter(o.name, o.stats, o.spells, o.equip, o.passives, o.el, { main: [o.el], sub: o.sub || null }); }
+// ===== 決勝の相手：盟友以外の五星からランダム =====
+function finalCandidates(s) { return Object.keys(CHARS).filter(k => CHARS[k].group === 'star' && k !== s.partner); }
+function setFinalOpponent(s, cid) {
+  const c = CHARS[cid];
+  const o = makeOpponent('final', { name: c.n, el: c.el, passives: [c.p40, c.p80] });
+  o.cid = cid; s.oppPlan = s.oppPlan || {}; s.oppPlan.final = o;
+  return o;
+}
+// 予告済みの対戦相手があればそれを使い、なければその場で決める（決勝は盟友以外の五星からランダム）
+function getOpponent(s, key) {
+  if (key === 'final' && !(s.oppPlan && s.oppPlan.final)) setFinalOpponent(s, pick(finalCandidates(s)));
+  const o = s.oppPlan && s.oppPlan[key];
+  if (o) { delete s.oppPlan[key]; return o; }
+  return makeOpponent(key);
+}
+// おすすめ装備：威力・適性・相性・共鳴を考えて装備枠ぶん選ぶ（相手の属性 oppEl は省略可）
+function recommendEquip(s, oppEl) {
+  const aff = affOf(s); const def = oppEl ? { el: oppEl, aff: { main: [oppEl], sub: null } } : null;
+  const score = x => { const sp = SPELL[x.id]; const lv = 1 + 0.12 * (x.lv - 1);
+    const base = sp.t === 'dmg' ? sp.pow * (sp.hits || 1) / sp.ct + (sp.burn ? 0.1 : 0) : sp.t === 'heal' ? 0.3 : sp.t === 'shield' ? 0.28 : 0.25;
+    return base * lv * affPower(aff, sp.el) * (sp.t === 'dmg' && def ? matchMul(sp.el, def) : 1); };
+  const n = slots(s); let best = [...s.spells].sort((a, b) => score(b) - score(a)).slice(0, n);
+  // 共鳴があと1つで発動するなら、最も弱い魔法と入れ替えて試す
+  const val = arr => arr.reduce((t, x) => t + score(x), 0) * (1 + 0.12 * synergyOf(aff, arr.map(x => SPELL[x.id].el)).length);
+  for (let pass = 0; pass < 2; pass++) for (const cand of s.spells) {
+    if (best.includes(cand)) continue;
+    let bi = -1, bv = val(best);
+    for (let i = 0; i < best.length; i++) { const t = [...best]; t[i] = cand; const v = val(t); if (v > bv + 1e-9) { bv = v; bi = i; } }
+    if (bi >= 0) { best = [...best]; best[bi] = cand; }   // 1候補につき入れ替えは1か所だけ（重複装備を防ぐ）
+  }
+  return best.map(x => x.id);
+}
+
+// ===== 評価 =====
+function grade(k, v) {
+  const x = k === 'hp' ? v / 3 : v;
+  const T = [[200, 'S'], [160, 'A'], [130, 'B'], [100, 'C'], [80, 'D'], [60, 'E'], [40, 'F']];
+  for (const [th, g] of T) if (x >= th) return g;
+  return 'G';
+}
+
+
+// ===== シナリオ呼び出し（UIやテストはこちらを使う） =====
+function examReward(s, key, won) { return SC.examReward(s, key, won); }
+function cupRounds(s) { return SC.cupRounds(s); }
+function finalRank(s) { return SC.finalRank(s); }
+function roundName(key) { return SC.roundName[key] || key; }
+
+// =====================================================================
+//  シナリオ
+// ---------------------------------------------------------------------
+//  育成の土台（ステータス・コマンド・戦闘・イベントの仕組み）は共通で、
+//  暦・試験・対戦相手・特別期間・固有イベント・評価をシナリオごとに持つ。
+//  新しいシナリオは SCENARIOS に1つ足し、setScenario('id') で切り替える。
+// =====================================================================
+const SCENARIOS = {};
+// 今週が告知の週なら、その試験の定義を返す
+function this_ex(s) { return SC.exams.find(e => s.turn === e.week - SC.announceWeeks + 1) || null; }
+SCENARIOS.main = {
+  id: 'main', name: '星見の魔法学院・本編',
+  weeksPerMonth: 4, months: 36, startMonth: 4,
+  // 試験・大会（週・名称・画面の説明文）
+  exams: [
+    { key: 'mid', week: 48, name: '1年目 中間試験', short: '中間試験', desc: '勝てば全ステータス上昇と特性を獲得', next: '2年目へ' },
+    { key: 'sel', week: 96, name: '2年目 選抜試験', short: '選抜試験', desc: '勝てば卒業大会のシード権（1回戦免除）', next: '3年目へ' },
+    { key: 'cup', week: 144, name: '卒業大会', short: '卒業大会', tournament: true },
+  ],
+  roundName: { cup1: '卒業大会 1回戦', cup2: '卒業大会 準決勝', final: '卒業大会 決勝', mid: '1年目 中間試験', sel: '2年目 選抜試験' },
+  // 各年の8月（年度の5か月目）は夏合宿：授業が「特訓」になる
+  special(t) { return (monthIdx(t) - 1) % 12 === 4 ? { id: 'camp', name: '夏合宿', trainMul: 1.6, trainFatigue: 28 } : null; },
+  // 対戦相手の基準値（×0.94〜1.06のゆらぎ）。n=魔法数、lv=魔法Lv、rare=レア魔法の扱い
+  opponents: {
+    mid: { hp: 312, atk: 61, int: 58, def: 52, acc: 57, n: 4, lv: 1, rare: 0 },
+    sel: { hp: 595, atk: 126, int: 120, def: 105, acc: 118, n: 5, lv: 2, rare: 1 },
+    cup1: { hp: 736, atk: 170, int: 152, def: 131, acc: 152, n: 5, lv: 2, rare: 1 },
+    cup2: { hp: 855, atk: 199, int: 184, def: 160, acc: 180, n: 6, lv: 3, rare: 1, passives: ['focus'] },
+    final: { hp: 931, atk: 220, int: 191, def: 166, acc: 189, n: 6, lv: 3, rare: 2 },   // 決勝の相手は五星から選ぶ（名前・属性・特性は setFinalOpponent が入れる）   // 土のサブ適性で水の弱点を消している
+  },
+  oppNames: {
+    mid: ['クラス代表 ロイ', 'クラス代表 アンナ', 'クラス代表 ギルバート', 'クラス代表 ソフィ'],
+    sel: ['選抜候補 ヴィクター', '選抜候補 リリアナ', '選抜候補 カイル'],
+    cup1: ['東部学院代表 ハルト', '南部学院代表 エレナ', '北部学院代表 ボリス'],
+    cup2: ['王立アカデミー代表 シオン', '王立アカデミー代表 クラウディア'],
+  },
+  // 交流相手の在・不在：ランダムな不在率、パートナーの不在率、最低限会える人数、特別期間に来る人
+  availability: { rate: 0.2, partnerRate: 0.1, minPresent: 3, special: { camp: ['leon', 'mina', 'sylva', 'julius', 'chloe'] } },
+  quietWeeks: 1,                                                                          // 入学直後の何週かは、ランダムな出来事を起こさない
+  partnerCheer: { rounds: ['cup1', 'cup2', 'final'], atk: 0.08 },                        // 卒業大会ではパートナーの声援で魔法攻撃+8%
+  partnerFromMonth: 1,                                                                    // 盟友の誓いが立てられる月（1＝いつでも）
+  rivalLevel(m) { return m <= 12 ? 'mid' : m <= 24 ? 'sel' : 'cup1'; },          // レオンの模擬戦の強さ（月で決まる）
+  nextEnemyDef(m) { return m <= 12 ? this.opponents.mid.def : m <= 24 ? this.opponents.sel.def : this.opponents.cup2.def; },
+  // ターン開始時イベントの発生順（EVENTS のキー、またはこのシナリオの events のキー）
+  announceWeeks: 4,                                                                      // 試験の何週前に対戦相手を告知するか
+  starEventRate: 0.22,                                                                    // 五星のランダムイベントが起きる確率（週あたり）。誰のイベントかは均等
+  turnEventOrder: ['announce', 'milestones', 'starEvent', 'morning', 'commonerLetter', 'nobleTutor', 'nobleBall', 'orphanAwaken', 'heirBook', 'heirPressure', 'camp', 'charEvent', 'generic', 'retry'],
+  events: {
+    announce: { desc: '試験の対戦相手の告知', run(s, c) {
+      const ex = this_ex(s);
+      if (!ex) return;
+      const key = ex.tournament ? cupRounds(s)[0] : ex.key;
+      const o = makeOpponent(key); s.oppPlan = s.oppPlan || {}; s.oppPlan[key] = o;
+      const mi = matchupInfo(o.el);
+      c.L.push({ title: `${ex.short}の対戦相手が決まった`, kicker: '告知', text: `${roundName(key)}の相手は【${o.name}】（${ELEM[o.el].n}属性）に決まった。\n${mi.strongVs.map(e => ELEM[e].n).join('・')}属性の魔法がよく効く。${mi.weakVs.map(e => ELEM[e].n).join('・')}属性の人は、相手の攻撃に注意。\n試験まであと${SC.announceWeeks}週。`, opp: o });
+    } },
+    camp: { desc: '夏合宿の開始', run(s, c) {
+      const { L, t } = c;
+  if (specialOf(s.turn) && specialOf(s.turn).id === 'camp' && weekOf(s.turn) === 1) {
+    const y = Math.ceil(t / 12);
+    L.push(mkEvent(`${y}年目 夏合宿`, '湖畔の合宿所で、4週間の夏合宿が始まる。授業は「特訓」になり、伸びも疲れも大きくなる。どう臨む？', [
+      { label: '初日から全力で', hint: '魔法攻撃+3・精度+3・疲労+10', fn: s => { gain(s, 'atk', 3); gain(s, 'acc', 3); s.fatigue = clamp(s.fatigue + 10, 0, 100); return '湖に向かって魔法を撃ちまくった。'; } },
+      { label: '体調管理を優先', hint: '疲労-20・調子↑', fn: s => { s.fatigue = clamp(s.fatigue - 20, 0, 100); s.cond = Math.min(4, s.cond + 1); return '湖畔の空気で心身を整えた。'; } },
+    ]));
+  }
+    } },
+  },
+  cupRounds(s) { return s.results.sel ? ['cup2', 'final'] : ['cup1', 'cup2', 'final']; },
+  examReward(s, key, won) { return mainExamReward(s, key, won); },
+  finalRank(s) { return mainFinalRank(s); },
+};
+function mainFinalRank(s) {
+  const r = s.results;
+  const pts = (r.mid ? 1 : 0) + (r.sel ? 1 : 0) + (r.cupWins || 0) * 1.5 + (r.champion ? 1.5 : 0);
+  if (r.champion && r.mid && r.sel) return { g: 'SS', t: '伝説の大魔法使い' };
+  if (r.champion) return { g: 'S', t: '卒業大会の覇者' };
+  if (pts >= 4) return { g: 'A', t: '王国魔導師団への推薦' };
+  if (pts >= 2.5) return { g: 'B', t: '一流の魔法使い' };
+  if (pts >= 1) return { g: 'C', t: '街の頼れる魔法使い' };
+  return { g: 'D', t: '修行の旅へ' };
+}
+
+
+// ===== 試験報酬（本編） =====
+function mainExamReward(s, key, won) {
+  const L = [];
+  const all = (v) => { const g = {}; for (const k of STATS) g[k] = gain(s, k, k === 'hp' ? v * 3 : v); return g; };
+  if (key === 'mid') {
+    if (won) { const g = all(8); L.push(`中間試験 合格！ 努力が認められた。全ステータス上昇`); const c = COMMON_PASSIVES.filter(p => !has(s, p)); if (c.length) { const p = pick(c); addPassive(s, p); L.push(`特性【${PASSIVES[p].n}】を獲得！`); } s.cond = Math.min(4, s.cond + 1); }
+    else { all(3); L.push('中間試験は不合格…悔しさをバネに少し成長した。'); }
+    s.results.mid = won;
+  }
+  if (key === 'sel') {
+    if (won) { all(12); L.push('選抜試験 突破！ 卒業大会のシード権を獲得した（1回戦免除）。'); const c = COMMON_PASSIVES.filter(p => !has(s, p)); if (c.length) { const p = pick(c); addPassive(s, p); L.push(`特性【${PASSIVES[p].n}】を獲得！`); } }
+    else { all(5); L.push('選抜試験は敗退…卒業大会には一般枠（1回戦から）で出場する。'); }
+    s.results.sel = won;
+  }
+  s.fatigue = Math.max(0, s.fatigue - 20);
+  return L;
+}
+
+function setScenario(id) {
+  SC = SCENARIOS[id];
+  WPM = SC.weeksPerMonth; TOTAL = SC.months * WPM;
+  EXAM_WEEK = Object.fromEntries(SC.exams.map(e => [e.key, e.week]));
+}
+setScenario('main');
+
+if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, ORIGINS, newStudent, doTrain, doResearch, doSocial, doRest, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, PASSIVES, milestoneEvents, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, STAR_EVENTS, starEvent, GROUPS, EVENT_GAIN, bondNext, CHAR_STORY, applyFx, fxHint, CHARS, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
+
+</script>
+<script>
+const $ = (sel) => document.querySelector(sel);
+const esc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let S = null, TAB = 'log', TURNLOG = [], BUSY = false;
+const monthOf = t => ((monthIdx(t) - 1) % 12 + 3) % 12 + 1;   // 4月始まり
+const yearOf = t => Math.ceil(monthIdx(t) / 12);
+const whenOf = t => `${yearOf(t)}年目 ${monthOf(t)}月 第${weekOf(t)}週`;
+const examAt = t => SC.exams.find(e => e.week === t);          // その週に行う試験（シナリオ定義）
+const R0 = v => Math.round(v);
+
+function fmtDiff(d) {
+  return d.map(x => x.k === 'cond' ? `調子 ${x.from}→${x.to}` : `${x.name}${x.to - x.from > 0 ? '+' : ''}${x.to - x.from}`).join(' / ');
+}
+function mergeDelta(d) {
+  for (const x of d) {
+    const e = S._delta.find(y => y.k === x.k);
+    if (e) e.to = x.to; else S._delta.push({ ...x });
+  }
+  S._delta = S._delta.filter(x => x.from !== x.to);
+}
+function diffRows(d) {
+  if (!d || !d.length) return '';
+  return `<table class="dtable">${d.map(x => {
+    if (x.k === 'cond') return `<tr><td>調子</td><td>${x.from}</td><td class="arrow">→</td><td>${x.to}</td><td><span class="dlt ${x.up ? 'up' : 'down'}">${x.up ? '▲' : '▼'}</span></td></tr>`;
+    const v = x.to - x.from; const good = x.inv ? v < 0 : v > 0;
+    return `<tr><td>${x.name}</td><td>${x.from}</td><td class="arrow">→</td><td><strong>${x.to}</strong></td><td><span class="dlt ${good ? 'up' : 'down'}">${v > 0 ? '+' : ''}${v}</span></td></tr>`;
+  }).join('')}</table>`;
+}
+function spellCard(id) {
+  const e = S.spells.find(x => x.id === id) || { id, lv: 1 }; const sp = SPELL[id];
+  const st = spellStats(S, e, nextEnemyDef(S.turn));
+  const kv = [['威力', sp.pow ? (sp.hits ? `${st.pow}×${sp.hits}` : st.pow) : '―'], ['CT', `${st.ct}tick`]];
+  if (st.total != null) kv.push(['予想ダメージ', st.total], ['効率', st.perTick]);
+  if (st.heal != null) kv.push(['回復量', st.heal]);
+  if (st.shield != null) kv.push(['バリア', st.shield]);
+  return `<div class="gotcard">${elChip(sp.el)} <span class="n">${sp.n}</span> <span class="note">Lv${e.lv}${sp.rare ? '・レア' : ''}</span>
+    <div class="d">${spellDesc(sp)}</div><div class="kv">${kv.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('')}</div>
+    </div>`;
+}
+function passiveCard(p) { return `<div class="gotcard"><span class="note">特性を獲得</span><div class="n">${PASSIVES[p].u ? '✦ ' : ''}${PASSIVES[p].n}</div><div class="d">${PASSIVES[p].d}</div></div>`; }
+// 関係の壁（絆40・80を越えるのに必要な能力）
+function gateMark(g, cur) { return g.state === 'passed' ? '<span class="gp">越えた</span>' : g.state === 'ready' ? '<span class="gr">✓ 届いている</span>' : `<span class="gs">🔒 あと${g.need - cur}</span>`; }
+function gateTable(s) {
+  const rows = Object.keys(CHARS).filter(k => isUnlocked(s, k)).map(k => { const c = CHARS[k]; const gi = gateInfo(s, k);
+    return `<tr><td>${elChip(c.el)} ${c.n}</td><td>${STAT_NAME[gi.stat]}</td><td class="num">${gi.cur}</td>${gi.gates.map(g => `<td class="num">${g.need}<br>${gateMark(g, gi.cur)}</td>`).join('')}</tr>`; }).join('');
+  return `<div class="tblwrap"><table class="sptbl gtbl" style="min-width:420px"><thead><tr><th>人物</th><th>得意な能力</th><th>いま</th><th>絆40の壁</th><th>絆80の壁</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function affChips(s) {
+  return s.affinity.map(e => `<span title="主適性">${elChip(e)}</span>`).join(' ') + (s.sub ? ` <span class="subaff" title="サブ適性">サブ ${elChip(s.sub)}</span>` : '');
+}
+// 交流相手を選ぶ画面
+function chooseSocial() {
+  if (BUSY) return;
+  const card = k => { const c = CHARS[k]; const b = S.bonds[k]; const away = S.absent && S.absent[k];
+    return `<button class="scard ${S.partner === k ? 'partner' : ''} ${away ? 'away' : ''}" ${away ? 'disabled aria-disabled="true"' : `data-soc="${k}"`}>
+      <div>${elChip(c.el)} <b>${c.n}</b> <span class="sex ${c.sex === '男' ? 'm' : 'f'}">${c.sex === '男' ? '♂' : '♀'}</span> <span class="kind">${c.kind}</span>${S.partner === k ? ' <b class="pbadge">盟友</b>' : ''}</div>
+      <div class="note">${c.role}・${STAT_NAME[c.stat]}が伸びる${c.group === 'event' ? '（多め）' : ''}</div>
+      <div class="sbar"><div class="bar"><span style="width:${b}%"></span></div><span>${b}</span></div>
+      <div class="snext">${away ? `今週は不在：${esc(away)}` : esc(bondNext(S, k))}</div></button>`; };
+  const sec = g => `<h3 class="ghead">${GROUPS[g].n}<span class="note">（${GROUPS[g].d}）</span></h3><div class="sgrid">${Object.keys(CHARS).filter(k => CHARS[k].group === g).map(card).join('')}</div>`;
+  openModal(`<div class="pop"><div class="kicker">交流</div><h2>誰と過ごす？</h2>
+    <p class="txt">今週会えるのは${socialTargets(S).length}人。五星との絆は、交流よりも日々の出来事で深まります。絆100で、五星のうち1人と盟友になれます。</p>
+    ${sec('star')}${sec('event')}<div class="row"><button class="btn" id="socCancel">やめる</button></div></div>`);
+  document.querySelectorAll('[data-soc]').forEach(b => b.onclick = () => { const k = b.dataset.soc; $('#ov').classList.remove('show'); act(() => doSocial(S, k)); });
+  $('#socCancel').onclick = closeModal;
+}
+function speaker(cid) {
+  const c = CHARS[cid];
+  return `<div class="speaker">${elChip(c.el)} <b>${c.n}</b> <span class="sex ${c.sex === '男' ? 'm' : 'f'}">${c.sex === '男' ? '♂' : '♀'}</span> <span class="note">${c.role}</span></div>`;
+}
+function bondRow(b) {
+  const c = CHARS[b.k]; const v = b.to - b.from;
+  const nt = [20, 40, 60, 80, 100].find(x => b.to < x);   // 次の節目（内容は bondNext と同じ文言）
+  return `<div class="bondbox"><div class="bh"><span>${c.n}との絆</span><span><strong>${b.from} → ${b.to}</strong> <span class="dlt up">+${v}</span></span></div>
+    <div class="bar"><span style="width:${b.from}%;border-radius:99px 0 0 99px"></span><span class="gain" style="width:${v}%"></span></div>
+    <div class="note">${nt ? `絆${nt}まであと${nt - b.to}：${esc(bondNext(S, b.k).replace(/^絆\d+：/, ''))}` : esc(bondNext(S, b.k))}</div></div>`;
+}
+
+function showPopups(list, done) {
+  if (!list.length) { done(); return; }
+  const [e, ...rest] = list;
+  openModal(`<div class="pop ${e.big ? 'big' : ''} ${e.bad ? 'bad' : ''}">
+    <div class="kicker">${e.kicker || 'イベント'}${list.length > 1 ? `（あと${list.length - 1}件）` : ''}</div>
+    ${e.char ? speaker(e.char) : ''}<h2>${esc(e.title)}</h2><p class="txt">${esc(e.text)}</p>
+    ${e.opp ? oppCard(e.opp) : ''}${e.bond ? bondRow(e.bond) : ''}${diffRows(e.diff)}${e.spell ? spellCard(e.spell) : ''}${e.passive ? passiveCard(e.passive) : ''}
+    <div class="row"><button class="btn main" id="popok">${rest.length ? '次へ' : 'OK'}</button></div></div>`);
+  $('#popok').onclick = () => { closeModal(); showPopups(rest, done); };
+}
+
+function elChip(el) { return el ? `<span class="el" style="background:${ELEM[el].c}">${ELEM[el].n}</span>` : ''; }
+
+// ---------- タイトル ----------
+function renderTitle() {
+  $('#app').innerHTML = `
+  <section class="hero"><div>
+    <div class="sky">✦ ✧ ✦</div>
+    <h1>星見の魔法学院</h1>
+    <p class="lead">三年間、百四十四の週。授業・研究・交流・休息を選び、卒業大会で頂点を目指す魔法使いを育てよう。出自も習得魔法も、毎回ちがう。</p>
+    <div class="namef">
+      <label for="nm" class="note" style="align-self:center">生徒の名前</label>
+      <input id="nm" maxlength="10" value="アルト">
+      <button class="btn main" id="go">入学する</button>
+    </div>
+    <details style="max-width:34em;margin:22px auto 0;text-align:left">
+      <summary>遊び方</summary>
+      <p>毎週1つ行動を選び、3年間（144週）で魔法使いを育てます。目標は3年目の卒業大会での優勝です。</p>
+      <p>授業でステータス、研究で魔法、交流で絆と特性が伸びます。疲労がたまると失敗しやすくなるので、休息を挟みましょう。仲間との関係を深めるには、その人の得意な能力を鍛えておく必要があります。</p>
+      <p>属性には相性があります（火→木→水→火、光と闇は互いに弱点）。試験の前に対戦相手が発表されるので、有利な魔法を用意して挑みましょう。</p>
+    </details>
+  </div></section>`;
+  $('#go').onclick = () => { const n = $('#nm').value.trim() || 'アルト'; SHOWN = null; S = newStudent(n); TURNLOG = []; renderReveal(); };
+  $('#nm').onkeydown = e => { if (e.key === 'Enter') $('#go').click(); };
+}
+
+function renderReveal() {
+  closeModal();
+  const o = ORIGINS[S.origin];
+  openModal(`<div class="reveal">
+    <p class="note">入学審査の結果…</p>
+    <div class="big">${o.n}${S.origin === 'heir' ? ' ✦' : ''}</div>
+    <p>${o.desc}</p>
+    <p>魔法適性：${S.affinity.map(elChip).join(' ')}　${S.origin === 'orphan' ? `才能：<strong>${S.talents.map(k => STAT_NAME[k]).join('・')}</strong>` : ''}</p>
+    <p>最初の魔法：${S.spells.map(x => '【' + SPELL[x.id].n + '】').join(' ')}</p>
+    ${S.origin === 'heir' ? '<p class="note">めったに現れないレア出自です。</p>' : ''}
+    <div class="row"><button class="btn" id="re">引き直す</button><button class="btn main" id="ok">学院生活を始める</button></div>
+  </div>`);
+  $('#re').onclick = () => { SHOWN = null; S = newStudent(S.name); renderReveal(); };
+  $('#ok').onclick = () => { closeModal(); startTurn(); };
+}
+
+// ---------- ターン進行 ----------
+function startTurn() {
+  if (!S._delta) S._delta = [];
+  const evs = turnEvents(S);
+  TURNLOG.unshift({ turn: S.turn, lines: [] });
+  render();
+  if (evs.length) { BUSY = true; processEvents(evs, `${whenOf(S.turn)}のイベント`, () => { BUSY = false; render(); }); }
+}
+// イベントを順に処理：選択肢があれば選ばせ、結果を表示
+function processEvents(list, kicker, done) {
+  if (!list.length) { done(); return; }
+  const [e, ...rest] = list; const next = () => processEvents(rest, kicker, done);
+  if (!e.choices) { showPopups([{ ...e, kicker }], next); return; }
+  openModal(`<div class="pop ${e.big ? 'big' : ''}"><div class="kicker">${kicker}${rest.length ? `（このあと${rest.length}件）` : ''}</div>${e.char ? speaker(e.char) : ''}
+    <h2>${esc(e.title)}</h2><p class="txt">${esc(e.text)}</p>
+    <div class="choices">${e.choices.map((c, i) => `<button class="choice" data-ch="${i}"><span class="cl">${esc(c.label)}</span><span class="ch">${esc(hintOf(S, c))}</span></button>`).join('')}</div></div>`);
+  document.querySelectorAll('[data-ch]').forEach(b => b.onclick = () => {
+    const res = resolveChoice(S, e, +b.dataset.ch);
+    mergeDelta(res.diff);
+    TURNLOG[0].lines.push({ t: `${e.title}：「${res.choice}」${res.text}${res.diff.length ? '（' + fmtDiff(res.diff) + '）' : ''}`, c: 'ev' });
+    render();
+    showPopups([{ title: res.ok ? `${res.choice}――成功！` : res.bad ? `${res.choice}――失敗…` : res.choice, text: res.text, diff: res.diff, spell: res.spell, passive: res.passive, big: res.big, bad: res.bad, kicker: e.title }], next);
+  });
+}
+function researchCard(id) {
+  const have = S.spells.find(x => x.id === id); const sp = SPELL[id];
+  const entry = { id, lv: have ? Math.min(5, have.lv + 1) : 1 };
+  const st = spellStats(S, entry, nextEnemyDef(S.turn));
+  const kv = [['威力', sp.pow ? (sp.hits ? `${st.pow}×${sp.hits}` : st.pow) : '―'], ['CT', `${st.ct}tick`]];
+  if (st.total != null) kv.push(['予想ダメージ', st.hits > 1 ? `${st.hit}×${st.hits}` : st.total], ['効率', st.perTick]);
+  if (st.heal != null) kv.push(['回復量', st.heal]);
+  if (st.shield != null) kv.push(['バリア', st.shield]);
+  const free = S.equip.length < slots(S);
+  const ar = affRole(affOf(S), sp.el);
+  const tag = (ar ? `<span class="badge aff">${{ main: '主適性', pure: '純化', sub: 'サブ適性' }[ar]}</span>` : '') + (have ? `<span class="badge up">強化 Lv${have.lv}→${entry.lv}</span>` : `<span class="badge new">新規</span>`);
+  const cnt = S.equip.filter(x => SPELL[x].el === sp.el).length;
+  const synNote = !have && free && cnt === synNeed(affOf(S), sp.el) - 1 ? `<div class="d" style="color:var(--brass)">装備すると${ELEM[sp.el].n}の属性共鳴が発動（${SYNERGY[sp.el]}）</div>` : '';
+  return `<button class="rcard" data-learn="${id}">
+    <div>${elChip(sp.el)} ${tag}${sp.rare ? '<span class="badge rare">レア</span>' : ''}</div>
+    <div class="n">${sp.n}</div><div class="d">${spellDesc(sp).split('・').filter(t => !/^(CT|威力)/.test(t)).join('・') || '攻撃魔法'}</div>
+    <div class="kv">${kv.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('')}</div>
+    <div class="d" style="margin-top:6px">${have ? (have && S.equip.includes(id) ? '装備中の魔法が強化されます' : '未装備の魔法が強化されます') : (free ? '空き枠に自動で装備されます' : '装備枠が満杯のため控えに入ります')}</div>${synNote}
+    <span class="pickl">これを習得する</span></button>`;
+}
+function showResearch(offer, cb) {
+  openModal(`<div class="pop"><div class="kicker">研究</div><h2>研究の成果</h2>
+    <p class="txt">3つの魔法の糸口を見つけた。どれを突き詰める？ <span class="note">予想ダメージは次の試験相手への目安</span></p>
+    <div class="rgrid">${offer.map(researchCard).join('')}</div></div>`);
+  document.querySelectorAll('[data-learn]').forEach(b => b.onclick = () => { closeModal(); cb(b.dataset.learn); });
+}
+function act(fn) {
+  if (BUSY) return;
+  BUSY = true; S._delta = [];
+  const before = snap(S);
+  const eqBefore = [...S.equip];
+  const r = fn();
+  const afterMain = () => {
+    const d = diffSnap(before, snap(S));
+    mergeDelta(d);
+    TURNLOG[0].lines.push(...r.lines.map(t => ({ t, c: r.fail ? 'bad' : (t.startsWith('★') ? 'ev' : '') })));
+    // 知力が下がって装備枠が減ると、はみ出した魔法は自動で外れる。気づけるよう記録に残す
+    const dropped = eqBefore.filter(id => !S.equip.includes(id));
+    if (dropped.length) TURNLOG[0].lines.push({ t: `装備枠が減ったため【${dropped.map(id => SPELL[id].n).join('】【')}】を外した。魔法タブで付け替えられます。`, c: 'bad' });
+    render();
+    const evs = (r.events || []).map((e, i) => e.choices ? e : ({ ...e, diff: e.diff || (i === 0 ? d : []) }));
+    if (!evs.length && d.length) showToast({ train: isCamp(S.turn) ? '特訓' : '授業', research: '研究', social: '交流', rest: '休息' }[r.kind], d);
+    processEvents(evs, { train: '授業', research: '研究', social: '交流', rest: '休息' }[r.kind], () => {
+      BUSY = false;
+      const ex = examAt(S.turn);
+      render();
+      if (ex && !ex.tournament) { BUSY = true; setTimeout(() => runExam(ex.key), 250); }
+      else if (ex) { BUSY = true; setTimeout(() => runCup(0), 250); }
+      else { S.turn++; startTurn(); }
+    });
+  };
+  if (r.offer) { render(); showResearch(r.offer, id => { r.lines.push(learnChoice(S, id)); afterMain(); }); }
+  else afterMain();
+}
+
+// ---------- 画面 ----------
+function render() {
+  const s = S;
+  const sv = SHOWN || snap(s);   // 画面に出す値（アニメーション前は1つ前の値）
+  const t = s.turn;
+  const years = Array.from({ length: Math.ceil(SC.months / 12) }, (_, i) => i + 1).map(y => {
+    const exd = SC.exams.find(e => Math.ceil(monthIdx(e.week) / 12) === y);
+    const res = !exd ? undefined : exd.tournament ? s.results.champion : s.results[exd.key];
+    const cls = res === true ? 'won' : res === false ? 'lost' : '';
+    const cm = monthIdx(t);
+    const dots = Array.from({ length: 12 }, (_, i) => { const n = (y - 1) * 12 + i + 1; const mon = (i + 3) % 12 + 1;
+      return `<div class="tk ${n < cm ? 'done' : n === cm ? 'now' : ''} ${i === 4 ? 'camp' : ''}" title="${y}年目 ${mon}月${i === 4 ? '（夏合宿）' : ''}"><i></i>${n === cm ? `<em>第${weekOf(t)}週</em>` : ''}</div>`; }).join('');
+    return `<div class="yr"><span>${y}年目</span><div class="dots">${dots}<div class="tk exam ${cls}"><b>✦</b></div></div></div>`;
+  }).join('');
+  const fr = failRate(s);
+  const fatCls = sv.fatigue >= 70 ? 'bad' : sv.fatigue >= 50 ? 'warn' : '';
+  const nx = SC.exams.find(e => t <= e.week) || SC.exams[SC.exams.length - 1];
+  const nextEx = `${nx.short}まで あと${nx.week - t + 1}週`;
+  const camp = isCamp(t);
+  $('#app').innerHTML = `
+  <div class="top">
+    <div><h1>星見の魔法学院</h1><div class="note">${nextEx}</div></div>
+    <div style="text-align:right"><div class="when">${yearOf(t)}年目 ${monthOf(t)}月<span class="wk">第${weekOf(t)}週</span><small>${t} / ${TOTAL}週</small></div></div>
+  </div>
+  <div class="track" aria-label="3年間の進行">${years}</div>
+  <div class="grid">
+    <div class="panel">
+      <div class="who"><h2>${esc(s.name)}</h2><div><span class="tag origin">${ORIGINS[s.origin].n}</span>${affChips(s)}</div></div>
+      ${s.partner ? `<div class="note partnerline">盟友：${CHARS[s.partner].n}（サブ適性 ${ELEM[s.sub].n}）</div>` : ''}
+      <div class="stats">${STATS.map(k => {
+        const v = sv[k]; const sc = k === 'hp' ? 7.5 : 2.5;
+        const dd = (s._delta || []).find(x => x.k === k); const dv = dd ? dd.to - dd.from : 0;
+        const [bw, gw] = barWidths(k, v, v === R0(s.stats[k]) ? dv : 0);
+        return `<div class="st" data-k="${k}"><span>${STAT_NAME[k]}${s.talents.includes(k) ? ' <small style="color:var(--brass)">才</small>' : ''}</span><span class="g">${grade(k, v)}</span><span class="v">${v}</span><span class="dcell">${dv ? `<span class="dlt ${dv > 0 ? 'up' : 'down'}">${dv > 0 ? '+' : ''}${dv}</span>` : ''}</span><div class="bar" style="display:flex"><span class="base" style="width:${bw}%;border-radius:99px 0 0 99px"></span><span class="gain" style="width:${gw}%;border-radius:0 99px 99px 0"></span></div></div>`;
+      }).join('')}</div>
+      <div class="meta">
+        <div class="fat ${fatCls}" data-k="fatigue"><span class="k">疲労</span><strong class="v">${sv.fatigue}</strong> / 100${(() => { const x = (s._delta || []).find(y => y.k === 'fatigue'); if (!x) return ''; const v = x.to - x.from; return `<span class="dlt ${v < 0 ? 'up' : 'down'}">${v > 0 ? '+' : ''}${v}</span>`; })()}<div class="bar"><span class="base" style="width:${sv.fatigue}%"></span></div></div>
+        <div data-k="cond"><span class="k">調子</span><strong class="v">${COND[sv.cond]}</strong>${(() => { const x = (s._delta || []).find(y => y.k === 'cond'); return x ? `<span class="dlt ${x.up ? 'up' : 'down'}">${x.up ? '▲' : '▼'}</span>` : ''; })()} <span class="note">成長×${COND_MUL[s.cond]}</span></div>
+        <div><span class="k">魔法の装備枠（知力で増加）</span><strong>${s.equip.length} / ${slots(s)}</strong></div>
+        <div><span class="k">詠唱短縮（知力）</span><strong>${Math.round(Math.min(0.3, s.stats.int / 800) * 100)}%</strong></div>
+      </div>
+      ${s._delta && s._delta.length ? `<div class="changes"><b>直近の変化</b>${fmtDiff(s._delta)}</div>` : ''}
+      <div class="cmds">
+        ${camp ? `<div class="campbar">夏合宿中：授業は「特訓」（成長1.6倍・疲労+28）</div>` : ''}
+        <h3>${camp ? '特訓' : '授業'}<span class="note" style="font-weight:400">（疲労+${camp ? 28 : 22}）</span></h3>
+        <div class="lessons">${STATS.map(k => `<button data-train="${k}">${STAT_NAME[k]}<small>${SUBJECT[k]}</small></button>`).join('')}</div>
+        <div class="others">
+          <button data-cmd="research">研究<small>${s.research >= 100 ? '次の研究で成果！' : '進捗 ' + s.research + '%'}</small><span class="prog"><span style="width:${Math.min(100, s.research)}%"></span></span></button>
+          <button data-cmd="social">交流<small>今週会える：${socialTargets(s).length}人</small></button>
+          <button data-cmd="rest">休息<small>疲労回復</small></button>
+        </div>
+        <div class="risk ${fr >= 20 ? 'hot' : ''}">${fr > 0 ? `授業の失敗率 ${Math.round(fr)}%。休息を検討しましょう。` : '体調は万全。失敗の心配はありません。'}</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="tabs" role="tablist">
+        ${[['log', '記録'], ['spells', `魔法（${s.spells.length}）`], ['traits', '特性と絆']].map(([k, n]) => `<button role="tab" aria-selected="${TAB === k}" data-tab="${k}">${n}</button>`).join('')}
+      </div>
+      <div id="tabbody">${tabBody()}</div>
+    </div>
+  </div>
+  <div class="row" style="justify-content:space-between;margin-top:16px"><button class="themebtn" id="theme">表示テーマ切替</button><button class="themebtn" id="quit">最初からやり直す</button></div>`;
+  document.querySelectorAll('[data-train]').forEach(b => b.onclick = () => act(() => doTrain(S, b.dataset.train)));
+  document.querySelectorAll('[data-cmd]').forEach(b => b.onclick = () => {
+    if (b.dataset.cmd === 'social') { chooseSocial(); return; }
+    act(() => ({ research: doResearch, rest: doRest })[b.dataset.cmd](S));
+  });
+  document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { TAB = b.dataset.tab; render(); });
+  document.querySelectorAll('[data-eq]').forEach(b => b.onclick = () => toggleEquip(b.dataset.eq));
+  $('#theme').onclick = toggleTheme;
+  $('#quit').onclick = confirmRestart;
+  requestAnimationFrame(animateStats);
+}
+
+function tabBody() {
+  const s = S;
+  if (TAB === 'log') {
+    return `<div class="log">${TURNLOG.map((g, i) => `<div class="turnlog ${i === 0 ? 'newest' : ''}"><h4>${whenOf(g.turn)}</h4>${g.lines.length ? g.lines.map(l => `<p class="${l.c}">${esc(l.t)}</p>`).join('') : '<p class="note">行動を選んでください。</p>'}</div>`).join('')}</div>`;
+  }
+  if (TAB === 'spells') {
+    const cnt = {}; s.equip.forEach(id => { const e = SPELL[id].el; cnt[e] = (cnt[e] || 0) + 1; });
+    const on = equipSyn(s);
+    const synTxt = on.length ? on.map(k => `${elChip(k)} 属性共鳴：${SYNERGY[k]}`).join('<br>')
+      : `同じ属性を3つ（主適性の${affOf(s).main.map(e => ELEM[e].n).join('・')}は2つ）装備すると属性共鳴が発動します。現在：${Object.entries(cnt).map(([k, v]) => `${ELEM[k].n}${v}/${synNeed(affOf(s), k)}`).join(' ') || 'なし'}`;
+    const free = slots(s) - s.equip.length;
+    return `${MSG ? `<p class="warnmsg" role="alert">${esc(MSG)}</p>` : ''}<div class="syn">${synTxt}</div><div class="syn">${defenseInfo(s)} 相性：火→木→水→火、光⇔闇（有利×${MATCH.strong}・不利×${MATCH.weak}）</div>
+      ${free > 0 && s.spells.length > s.equip.length ? `<p class="note">装備枠に${free}つ空きがあります。</p>` : ''}
+      ${spellTable()}
+      <p class="note">予想ダメージは次の試験相手に当てたときの目安です。効率が高い魔法ほど、同じ時間でより多くのダメージを与えます。同じ魔法を研究で引くとLvが上がります（最大Lv5）。</p>`;
+  }
+  return `<h3 style="margin:0 0 8px;font-size:15px">特性</h3>
+    <div class="plist">${s.passives.length ? s.passives.map(p => `<div>${PASSIVES[p].u ? '✦ ' : ''}${PASSIVES[p].n}<span>${PASSIVES[p].d}</span></div>`).join('') : '<p class="note">まだ特性はありません。交流や試験の合格で獲得できます。</p>'}</div>
+    <h3 style="margin:18px 0 8px;font-size:15px">習得に挑戦中</h3>
+    ${s.pending.length ? `<div class="plist">${s.pending.map(a => `<div>${a.kind === 'passive' ? '特性' : '魔法'}【${a.kind === 'passive' ? PASSIVES[a.id].n : SPELL[a.id].n}】<span>コツLv${a.fails}・現在の成功率${Math.round(attemptRate(s, a) * 100)}%${a.src && CHARS[a.src] ? `・${CHARS[a.src].n}と交流すると再挑戦しやすい` : ''}</span></div>`).join('')}</div>` : '<p class="note">習得に失敗した特性や魔法は、ここに残り、あとで再挑戦できます。失敗するたびに成功しやすくなります。</p>'}
+    <h3 style="margin:18px 0 8px;font-size:15px">関係の壁</h3>
+    <p class="note" style="margin:0 0 6px">絆40・80から先へ進むには、その人の得意な能力が目安に届いている必要があります。</p>
+    ${gateTable(s)}
+    <h3 style="margin:18px 0 8px;font-size:15px">絆</h3>
+    ${['star', 'event'].map(g => `<h3 class="ghead">${GROUPS[g].n}<span class="note">（${GROUPS[g].d}）</span></h3>` + Object.entries(CHARS).filter(([, c]) => c.group === g).map(([k, c]) => `<div class="bond"><span>${c.n} <span class="sex ${c.sex === '男' ? 'm' : 'f'}" title="${c.sex}性">${c.sex === '男' ? '♂' : '♀'}</span></span><div class="bar"><span style="width:${s.bonds[k]}%"></span></div><span class="note">${s.bonds[k]}</span></div>
+      <div class="note" style="margin:-2px 0 2px">${c.role}（${ELEM[c.el].n}）</div>
+      <div class="note" style="margin:0 0 8px">${s.partner === k ? '<b class="pbadge">盟友</b> ' : ''}次：${bondNext(s, k)}<br>${s.absent && s.absent[k] ? `<span class="awaytxt">今週は不在（${esc(s.absent[k])}）</span>` : '<span class="heretxt">今週は会える</span>'}${c.busy ? `・毎月第${c.busy.week}週は不在${s.absent && s.absent[k] === c.busy.reason ? '' : `（${c.busy.reason}）`}` : ''}${c.absentRate && c.absentRate > 0.3 ? '・よく姿を消す' : ''}</div>`).join('')).join('')}
+    <p class="note">絆が20・40・60・80・100に届くたびに、物語や特性・秘伝魔法の習得が起きます。絆40・80から先へ進むには、その人の得意な能力を鍛える必要があります。足りないあいだは、絆がそこで止まります（🔒）。五星との絆は日々の出来事で大きく深まり、絆100で1人と盟友になれます。イベントの人物は盟友になれませんが、交流で伸びるステータスが多めで、絆100で特別な餞別をくれます。</p>
+`;
+}
+
+function spellTable() {
+  const s = S; const ed = nextEnemyDef(s.turn);
+  const rows = [...s.spells.map(x => ({ x, eq: s.equip.includes(x.id) })), { x: { id: 'basic', lv: 1 }, eq: true, basic: true }]
+    .map(r => ({ ...r, st: spellStats(s, r.x, ed) }));
+  const best = Math.max(...rows.filter(r => r.st.perTick).map(r => r.st.perTick));
+  rows.sort((a, b) => (b.eq - a.eq) || ((b.st.perTick || 0) - (a.st.perTick || 0)));
+  return `<div class="tblwrap"><table class="sptbl"><thead><tr><th>魔法</th><th>威力</th><th>CT</th><th>予想ダメージ</th><th>効率</th><th>効果量</th><th></th></tr></thead><tbody>
+  ${rows.map(({ x, eq, st, basic }) => { const sp = st.sp;
+    const pw = sp.pow ? (sp.hits ? `${st.pow}×${sp.hits}` : st.pow) : '―';
+    const ctTxt = st.ct !== st.baseCt ? `${st.ct}<small class="note">（${st.baseCt}）</small>` : st.ct;
+    const eff = st.heal != null ? `回復${st.heal}` : st.shield != null ? `盾${st.shield}` : sp.t === 'buff' || sp.t === 'debuff' ? `${sp.dur}tick` : '';
+    return `<tr class="${eq ? '' : 'off'}"><td>${basic ? '' : elChip(sp.el) + ' '}<span class="nm">${sp.n}</span> <small class="note">${basic ? '基本' : 'Lv' + x.lv}${sp.rare ? '・レア' : ''}</small>${!basic && affRole(affOf(s), sp.el) ? ` <span class="badge aff">${{ main: '主適性', pure: '純化', sub: 'サブ' }[affRole(affOf(s), sp.el)]}</span>` : ''}<span class="ds">${spellDesc(sp).split('・').filter(t => !/^(CT|威力)/.test(t)).join('・') || '基本攻撃'}</span></td>
+      <td>${pw}</td><td>${ctTxt}</td><td>${st.total != null ? (st.hits > 1 ? `${st.hit}×${st.hits}` : st.total) : '―'}</td>
+      <td class="${st.perTick === best ? 'best' : ''}">${st.perTick != null ? st.perTick : '―'}</td><td>${eff}</td>
+      <td>${basic ? '<span class="note">常時</span>' : `<button class="${eq ? 'on' : ''}" data-eq="${x.id}" aria-pressed="${eq}">${eq ? '装備中' : '装備'}</button>`}</td></tr>`; }).join('')}
+  </tbody></table></div>`;
+}
+
+function confirmRestart() {
+  openModal(`<div class="pop bad"><div class="kicker">確認</div><h2>最初からやり直しますか？</h2>
+    <p class="txt">いまの生徒（${esc(S.name)}・${whenOf(S.turn)}）の育成データは破棄され、タイトル画面に戻ります。</p>
+    <div class="row"><button class="btn" id="rsNo">続ける</button><button class="btn main" id="rsYes">やり直す</button></div></div>`);
+  $('#rsNo').onclick = closeModal;
+  $('#rsYes').onclick = () => { closeModal(); BUSY = false; S = null; TURNLOG = []; TAB = 'log'; MSG = ''; renderTitle(); window.scrollTo(0, 0); };
+  $('#rsNo').focus();
+}
+let MSG = '';
+
+// ---------- ステータス変化の演出 ----------
+// 画面は SHOWN（表示中の値）で描画し、ポップアップが閉じている時に最新値へ動かす。
+// これでイベント中に変わった値も、ポップアップを閉じたあとに動いて見える。
+let SHOWN = null;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const RANKS = ['G', 'F', 'E', 'D', 'C', 'B', 'A', 'S'];
+function barWidths(k, v, dv) {
+  const sc = k === 'hp' ? 7.5 : 2.5; const w = Math.min(100, v / sc);
+  const gw = dv > 0 ? Math.min(w, dv / sc) : 0;
+  return [w - gw, gw];
+}
+function animateStats() {
+  if (!S || !document.querySelector('.stats')) return;
+  const cur = snap(S);
+  if (!SHOWN) { SHOWN = cur; return; }
+  if ($('#ov.show')) return;          // ポップアップ表示中は待つ（閉じたら再実行される）
+  const old = SHOWN; SHOWN = cur;
+  const ups = [];
+  for (const k of STATS) {
+    if (old[k] === cur[k]) continue;
+    const row = document.querySelector(`.st[data-k="${k}"]`); if (!row) continue;
+    const dv = cur[k] - old[k];
+    countUp(row.querySelector('.v'), old[k], cur[k]);
+    const dd = (S._delta || []).find(x => x.k === k); const tot = dd ? dd.to - dd.from : dv;
+    const [bw, gw] = barWidths(k, cur[k], tot);
+    row.querySelector('.bar .base').style.width = bw + '%'; row.querySelector('.bar .gain').style.width = gw + '%';
+    flash(row, dv > 0 ? 'fl-up' : 'fl-down');
+    floatText(row, `${dv > 0 ? '+' : ''}${dv}`, dv > 0 ? 'up' : 'down');
+    const g0 = grade(k, old[k]), g1 = grade(k, cur[k]);
+    const gEl = row.querySelector('.g');
+    if (g0 !== g1) {
+      setTimeout(() => { gEl.textContent = g1; flash(gEl, RANKS.indexOf(g1) > RANKS.indexOf(g0) ? 'rankup' : 'rankdown'); }, REDUCED ? 0 : 500);
+      if (RANKS.indexOf(g1) > RANKS.indexOf(g0)) ups.push(`${STAT_NAME[k]} ${g0}→${g1}`);
+    }
+  }
+  if (old.fatigue !== cur.fatigue) {
+    const row = document.querySelector('[data-k="fatigue"]');
+    if (row) { countUp(row.querySelector('.v'), old.fatigue, cur.fatigue); row.querySelector('.bar .base').style.width = cur.fatigue + '%';
+      row.classList.toggle('warn', cur.fatigue >= 50 && cur.fatigue < 70); row.classList.toggle('bad', cur.fatigue >= 70);
+      floatText(row, `${cur.fatigue > old.fatigue ? '+' : ''}${cur.fatigue - old.fatigue}`, cur.fatigue < old.fatigue ? 'up' : 'down'); }
+  }
+  if (old.cond !== cur.cond) {
+    const row = document.querySelector('[data-k="cond"]');
+    if (row) { row.querySelector('.v').textContent = COND[cur.cond]; flash(row, cur.cond > old.cond ? 'fl-up' : 'fl-down'); floatText(row, cur.cond > old.cond ? '▲' : '▼', cur.cond > old.cond ? 'up' : 'down'); }
+  }
+  if (ups.length) showToast('ランクアップ！', ups.map(t => ({ rank: t })), true);
+}
+function countUp(el, from, to) {
+  if (!el) return;
+  if (REDUCED) { el.textContent = to; return; }
+  const t0 = performance.now(), dur = 700;
+  const step = (now) => { const p = Math.min(1, (now - t0) / dur); const e = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(from + (to - from) * e); if (p < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+function flash(el, cls) { el.classList.remove('fl-up', 'fl-down', 'rankup', 'rankdown'); void el.offsetWidth; el.classList.add(cls); }
+function floatText(row, text, dir) {
+  if (REDUCED) return;
+  const f = document.createElement('span'); f.className = `float ${dir}`; f.textContent = text;
+  row.appendChild(f); setTimeout(() => f.remove(), 1400);
+}
+function showToast(title, diff, special) {
+  let box = $('#toasts'); if (!box) { box = document.createElement('div'); box.id = 'toasts'; box.setAttribute('aria-live', 'polite'); document.body.appendChild(box); }
+  const chips = diff.map(x => {
+    if (x.rank) return `<span class="chip up">${x.rank}</span>`;
+    if (x.k === 'cond') return `<span class="chip ${x.up ? 'up' : 'down'}">調子 ${x.to}${x.up ? '▲' : '▼'}</span>`;
+    const v = x.to - x.from; const good = x.inv ? v < 0 : v > 0;
+    return `<span class="chip ${good ? 'up' : 'down'}">${x.name} ${v > 0 ? '+' : ''}${v}</span>`;
+  }).join('');
+  const t = document.createElement('div'); t.className = `toast${special ? ' special' : ''}`;
+  t.innerHTML = `<b>${esc(title)}</b>${chips}`;
+  box.appendChild(t); while (box.children.length > 3) box.firstChild.remove();
+  setTimeout(() => t.classList.add('out'), 2600); setTimeout(() => t.remove(), 3100);
+}
+
+function toggleEquip(id) {
+  const s = S; const i = s.equip.indexOf(id);
+  if (i >= 0) { s.equip.splice(i, 1); }
+  else if (s.equip.length < slots(s)) s.equip.push(id);
+  else { MSG = `装備枠がいっぱいです（${slots(s)}枠）。他の魔法を外すか、知力を上げて枠を増やしましょう。`; render(); MSG = ''; return; }
+  render();
+}
+
+// ---------- 戦闘 ----------
+function battleView(title, sub, pf, of, opp) {
+  openModal(`<h2>${title}</h2><div class="note">${sub}</div>
+    <div class="vs">
+      <div class="side me"><div class="nm">${esc(pf.name)}</div><div class="bar"><span id="hbA" style="width:100%"></span></div><div class="hp"><span id="hA">${pf.maxHp}</span> / ${pf.maxHp} <span class="sh" id="sA"></span></div></div>
+      <div class="x">VS</div>
+      <div class="side op"><div class="nm">${esc(of.name)} ${elChip(opp.el)}</div><div class="bar"><span id="hbB" style="width:100%"></span></div><div class="hp"><span class="sh" id="sB"></span> <span id="hB">${of.maxHp}</span> / ${of.maxHp}</div></div>
+    </div>
+    <div class="oppspells">相手の魔法：${opp.equip.map(id => `${SPELL[id].n}<small>（${spellDesc(SPELL[id])}）</small>`).join('、')}${opp.passives.length ? '／特性：' + opp.passives.map(p => PASSIVES[p].n).join('・') : ''}
+      <br>あなたの共鳴：${pf.syn.length ? pf.syn.map(k => ELEM[k].n).join('・') : 'なし'}</div>
+    <div class="blog" id="blog" aria-live="polite"></div>
+    <div id="bres"></div>
+    <div class="row" id="brow"><button class="btn" id="skip">結果まで飛ばす</button></div>`);
+}
+function playBattle(pf, of, res, done) {
+  const L = res.log; let i = 0; const blog = $('#blog');
+  const show = (e) => {
+    const cls = e.kind === 'heal' ? 'heal' : e.kind === 'miss' ? 'miss' : (e.who === pf.name ? 'me' : 'op');
+    const d = document.createElement('div'); d.className = cls; d.innerHTML = `<span class="t">${e.t}</span>${esc(e.text)}`; blog.appendChild(d);
+    $('#hA').textContent = e.hA; $('#hB').textContent = e.hB;
+    $('#hbA').style.width = (e.hA / pf.maxHp * 100) + '%'; $('#hbB').style.width = (e.hB / of.maxHp * 100) + '%';
+    $('#sA').textContent = e.sA > 0 ? `盾${e.sA}` : ''; $('#sB').textContent = e.sB > 0 ? `盾${e.sB}` : '';
+    blog.scrollTop = blog.scrollHeight;
+  };
+  const timer = setInterval(() => { if (i >= L.length) { clearInterval(timer); fin(); return; } show(L[i++]); }, 260);
+  $('#skip').onclick = () => { clearInterval(timer); while (i < L.length) show(L[i++]); fin(); };
+  let finished = false;
+  function fin() { if (finished) return; finished = true; $('#skip').remove(); done(res.winner === pf, res.timeout); }
+}
+// ---------- 属性相性の表示 ----------
+function mmBadge(m) { return m > 1 ? '<span class="mm good">有利×' + MATCH.strong + '</span>' : m < 1 ? '<span class="mm bad">不利×' + MATCH.weak + '</span>' : ''; }
+// 自分の守り：主適性が守りの属性。弱点と、サブ適性による打ち消し
+function defenseInfo(s) {
+  const el = s.affinity[0]; const me = { el, aff: affOf(s) };
+  const others = s.affinity.slice(1);   // 大魔法使いの子の2つ目の主適性
+  const weakTo = Object.keys(BEATS).filter(a => BEATS[a] === el);
+  const head = others.length
+    ? `主適性は${s.affinity.map(elChip).join('と')}。守りの属性は${elChip(el)}`
+    : `守りの属性は主適性の${elChip(el)}`;
+  const desc = weakTo.map(a => {
+    if (matchMul(a, me) !== 1) return `${elChip(a)}の攻撃に弱い（×${MATCH.strong}）`;
+    const by = [s.sub, ...others].filter(Boolean).find(e => BEATS[e] === a);   // 弱点を打ち消している属性
+    return `${elChip(a)}の攻撃に弱いが、${by === s.sub ? 'サブ適性' : 'もう1つの主適性'}の${elChip(by)}で打ち消している`;
+  }).join('、');
+  return `${head}。${desc}。`;
+}
+function oppCard(o) {
+  const me = { el: S.affinity[0], aff: affOf(S) };
+  const worst = Math.max(...o.equip.map(id => SPELL[id].t === 'dmg' ? matchMul(SPELL[id].el, me) : 1));
+  return `<div class="gotcard oppc"><div>${elChip(o.el)} <b>${esc(o.name)}</b>${o.sub ? ` <span class="note">サブ適性 ${ELEM[o.sub].n}</span>` : ''}</div>
+    <div class="d">魔法：${o.equip.map(id => { const m = SPELL[id].t === 'dmg' ? matchMul(SPELL[id].el, me) : 1; return `${SPELL[id].n}${m > 1 ? '<span class="mm bad">弱点を突かれる×' + MATCH.strong + '</span>' : m < 1 ? '<span class="mm good">こちらが軽減×' + MATCH.weak + '</span>' : ''}`; }).join('、')}</div>
+    <div class="d">${worst > 1 ? '相手の魔法には、あなたの弱点を突くものがあります。' : '相手の魔法に、あなたの弱点を突くものはありません。'}</div></div>`;
+}
+// 戦闘前の作戦会議：相手を確認して装備を組み替える
+function prepBattle(opp, title, go, key) {
+  const draw = () => {
+    const def = { el: opp.el, aff: { main: [opp.el], sub: opp.sub || null } };
+    const rows = S.spells.map(x => { const sp = SPELL[x.id]; const eq = S.equip.includes(x.id); const m = sp.t === 'dmg' ? matchMul(sp.el, def) : 1;
+      return `<button class="prow ${eq ? 'on' : ''}" data-peq="${x.id}">${elChip(sp.el)} <span>${sp.n} <small class="note">Lv${x.lv}</small></span>${mmBadge(m)}<span class="pst">${eq ? '装備中' : ''}</span></button>`; }).join('');
+    const syn = equipSyn(S);
+    openModal(`<div class="pop"><div class="kicker">作戦会議</div><h2>${esc(title)}</h2>
+      ${oppCard(opp)}
+      ${opp.cid && CHAR_STORY[opp.cid].final ? `<div class="cheer rival">${speaker(opp.cid)}<p class="txt">${esc(CHAR_STORY[opp.cid].final)}</p></div>` : ''}
+      ${S.partner && key && SC.partnerCheer && SC.partnerCheer.rounds.includes(key) ? `<div class="cheer">${speaker(S.partner)}<p class="txt">${esc(CHAR_STORY[S.partner].cheer)}</p><div class="note">盟友の声援：この試合は魔法攻撃+${Math.round(SC.partnerCheer.atk * 100)}%</div></div>` : ''}
+      <p class="note" style="margin:8px 0 4px">${defenseInfo(S)}</p>
+      <div class="phead"><b>装備 ${S.equip.length} / ${slots(S)}</b><span class="note">${syn.length ? '共鳴：' + syn.map(e => ELEM[e].n).join('・') : '共鳴なし'}　押して付け外し</span></div>
+      <div class="plist2">${rows}</div>
+      <p class="warnmsg" id="pmsg"></p>
+      <div class="row"><button class="btn" id="prec">おすすめ装備にする</button><button class="btn main" id="pgo">この装備で戦う</button></div></div>`);
+    document.querySelectorAll('[data-peq]').forEach(b => b.onclick = () => {
+      const id = b.dataset.peq; const i = S.equip.indexOf(id);
+      if (i >= 0) S.equip.splice(i, 1); else if (S.equip.length < slots(S)) S.equip.push(id); else { $('#pmsg').textContent = `装備枠がいっぱいです（${slots(S)}枠）。先にどれかを外してください。`; return; }
+      draw();
+    });
+    $('#prec').onclick = () => { S.equip = recommendEquip(S, opp.el); draw(); };
+    $('#pgo').onclick = () => { closeModal(); go(); };
+  };
+  draw();
+}
+
+function breakdown(res, name) {
+  const m = {};
+  for (const e of res.log) {
+    if (e.who !== name) continue;
+    const id = e.sid || e.sid2; if (!id) continue;
+    const r = m[id] || (m[id] = { n: 0, dmg: 0, hit: 0, hits: 0, heal: 0, shield: 0 });
+    if (e.sid) { r.n++; r.dmg += e.dmg || 0; r.hit += e.hitN || 0; r.hits += e.hits || 0; r.heal += e.heal || 0; r.shield += e.shield || 0; }
+    if (e.drain) r.heal += e.drain;
+  }
+  const rows = Object.entries(m).sort((a, b) => b[1].dmg - a[1].dmg);
+  if (!rows.length) return '';
+  const tot = rows.reduce((a, [, r]) => a + r.dmg, 0) || 1;
+  return `<div class="bd"><h3>技ごとの戦績（${esc(name)}）</h3><div class="tblwrap"><table class="sptbl" style="min-width:420px"><thead><tr><th>魔法</th><th>使用</th><th>命中率</th><th>総ダメージ</th><th>割合</th><th>回復・盾</th></tr></thead><tbody>
+  ${rows.map(([id, r]) => { const sp = id === 'basic' ? BASIC : SPELL[id];
+    return `<tr><td>${sp.el ? elChip(sp.el) + ' ' : ''}${sp.n}</td><td>${r.n}回</td><td>${r.hits ? Math.round(r.hit / r.hits * 100) + '%' : '―'}</td><td>${r.dmg || '―'}</td><td>${r.dmg ? Math.round(r.dmg / tot * 100) + '%' : ''}</td><td>${r.heal ? '回復' + r.heal : ''}${r.shield ? ' 盾' + r.shield : ''}</td></tr>`; }).join('')}
+  </tbody></table></div></div>`;
+}
+
+function runExam(key) { const opp = getOpponent(S, key); prepBattle(opp, roundName(key), () => runExamBattle(key, opp), key); }
+function runExamBattle(key, opp) {
+  const pf = playerFighter(S, key); const of = oppFighter(opp);
+  const exd = SC.exams.find(e => e.key === key);
+  battleView(roundName(key), exd.desc || '', pf, of, opp);
+  const res = battle(pf, of);
+  playBattle(pf, of, res, (won, to) => {
+    S._delta = []; const b4 = snap(S); const pb = [...S.passives];
+    const lines = examReward(S, key, won);
+    const d = diffSnap(b4, snap(S)); mergeDelta(d);
+    const np = S.passives.filter(p => !pb.includes(p));
+    $('#bres').innerHTML = `<div class="result ${won ? 'win' : 'lose'}">${won ? '勝利！' : '敗北…'}${to ? '<small class="note">（時間切れ・残りHP割合で判定）</small>' : ''}</div><div class="rlines">${lines.map(l => `<p>${esc(l)}</p>`).join('')}</div>${diffRows(d)}${np.map(passiveCard).join('')}${breakdown(res, pf.name)}`;
+    TURNLOG[0].lines.push({ t: `${roundName(key)}：${won ? '勝利' : '敗北'}`, c: won ? 'ev' : 'bad' }, ...lines.map(t => ({ t, c: '' })));
+    $('#brow').innerHTML = `<button class="btn main" id="nx">${exd.next || '次へ'}</button>`;
+    $('#nx').onclick = () => { closeModal(); BUSY = false; S.turn++; startTurn(); };
+  });
+}
+function runCup(idx) { const key = cupRounds(S)[idx]; const opp = getOpponent(S, key); prepBattle(opp, roundName(key), () => runCupBattle(idx, opp), key); }
+function runCupBattle(idx, opp) {
+  const rounds = cupRounds(S); const key = rounds[idx];
+  const pf = playerFighter(S, key); const of = oppFighter(opp);
+  battleView(roundName(key), `${S.results.sel ? 'シード枠' : '一般枠'}　第${idx + 1}試合 / 全${rounds.length}試合（HPは試合ごとに全快）`, pf, of, opp);
+  const res = battle(pf, of);
+  playBattle(pf, of, res, (won, to) => {
+    S.results.cupWins = (S.results.cupWins || 0) + (won ? 1 : 0);
+    const last = idx === rounds.length - 1;
+    if (won && last) S.results.champion = true;
+    if (!won) S.results.champion = false;
+    $('#bres').innerHTML = `<div class="result ${won ? 'win' : 'lose'}">${won ? (last ? '優勝！' : '勝利！') : '敗退…'}${to ? '<small class="note">（時間切れ・残りHP割合で判定）</small>' : ''}</div>${breakdown(res, pf.name)}`;
+    if (won && !last) {
+      $('#brow').innerHTML = `<button class="btn main" id="nx">次の試合へ</button>`;
+      $('#nx').onclick = () => runCup(idx + 1);
+    } else {
+      S.results.cupReached = key;
+      $('#brow').innerHTML = `<button class="btn main" id="nx">卒業の日へ</button>`;
+      $('#nx').onclick = () => { closeModal(); BUSY = false; renderEnd(); };
+    }
+  });
+}
+
+// ---------- エンディング ----------
+function renderEnd() {
+  const s = S; const r = finalRank(s);
+  const reach = s.results.champion ? '優勝' : { cup1: '1回戦敗退', cup2: '準決勝敗退', final: '準優勝' }[s.results.cupReached];
+  $('#app').innerHTML = `<div class="panel" style="max-width:760px;margin:24px auto">
+    <p class="note">卒業証書　${ORIGINS[s.origin].n}出身 ${esc(s.name)}</p>
+    <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap"><div class="rank">${r.g}</div><div><h2 style="margin:0;font-size:26px">${r.t}</h2>
+    <p class="note" style="margin:4px 0 0">中間試験 ${s.results.mid ? '合格' : '不合格'}／選抜試験 ${s.results.sel ? '突破' : '敗退'}／卒業大会 ${reach}</p></div></div>
+    <div class="stats">${STATS.map(k => `<div class="st"><span>${STAT_NAME[k]}</span><span class="g">${grade(k, s.stats[k])}</span><span class="v">${R0(s.stats[k])}</span><span class="dcell"></span><div class="bar"><span style="width:${Math.min(100, k === 'hp' ? s.stats[k] / 7.5 : s.stats[k] / 2.5)}%"></span></div></div>`).join('')}</div>
+    <p><strong>最終ビルド：</strong>${s.equip.map(id => `${elChip(SPELL[id].el)} ${SPELL[id].n}`).join('　')}</p>
+    ${s.partner ? `<div class="cheer"><div class="note">盟友</div>${speaker(s.partner)}<p class="txt">${esc(CHAR_STORY[s.partner].ending)}</p><div class="note">サブ適性 ${ELEM[s.sub].n}／絆の物語：${['s20', 's60'].filter(k => s.flags[k + s.partner]).length}章</div></div>` : `<p class="note">盟友の誓いは立てなかった。卒業後の道は、ひとりで切り拓いていく。</p>`}
+    <p><strong>適性：</strong>主 ${s.affinity.map(e => ELEM[e].n).join('・')}${s.sub ? `／サブ ${ELEM[s.sub].n}` : ''}</p>
+    <p><strong>特性：</strong>${s.passives.map(p => PASSIVES[p].n).join('・') || 'なし'}</p>
+    <div class="row"><button class="btn main" id="again">新しい生徒で入学する</button></div></div>`;
+  $('#again').onclick = renderTitle;
+}
+
+// ---------- モーダル・テーマ ----------
+function openModal(html) { $('#modal').innerHTML = html; $('#ov').classList.add('show'); const f = $('#modal button.main') || $('#modal button'); if (f) f.focus(); }
+function closeModal() { $('#ov').classList.remove('show'); setTimeout(animateStats, 80); }
+function toggleTheme() {
+  const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const nx = cur === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = nx;
+  try { localStorage.setItem('theme', nx); } catch (e) {}
+}
+try { const th = localStorage.getItem('theme'); if (th) document.documentElement.dataset.theme = th; } catch (e) {}
+renderTitle();
+</script>
+</body>
+</html>
