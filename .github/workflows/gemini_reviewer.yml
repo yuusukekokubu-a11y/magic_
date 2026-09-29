@@ -11,15 +11,36 @@ jobs:
       issues: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - name: Create Diff Issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # 最新の変更差分を取得（初回などで差分がない場合のエラーも回避）
-          git diff HEAD~1 > diff.txt || echo "変更差分がありません、または初回コミットです。" > diff.txt
-          
+          git diff HEAD~1 > diff.txt 2>/dev/null || echo "変更差分がありません、または初回コミットです。" > diff.txt
+
+          # Gemini に貼り付けやすい本文を作る：変更の要約（commit message）・変更ファイル一覧・差分
+          # 差分はコードブロックで囲み（Markdown として崩れないように）、Issue 本文の上限（約65,000字）を超えないよう切り詰める
+          {
+            echo "対象 commit: ${GITHUB_SHA}"
+            echo
+            echo "## 変更の要約（commit message）"
+            git log --no-merges --format='### %s%n%n%b' HEAD~1..HEAD 2>/dev/null || true
+            echo "## 変更ファイル"
+            echo '```'
+            git diff --stat HEAD~1 2>/dev/null || true
+            echo '```'
+            echo "## 差分"
+            echo '````diff'
+            head -c 50000 diff.txt
+            echo
+            echo '````'
+            if [ "$(wc -c < diff.txt)" -gt 50000 ]; then
+              echo "※ 差分が大きいため途中で切り詰めました。全体は ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA} で確認してください。"
+            fi
+          } > body.md
+
           # Issueを作成して差分を投稿
-          gh issue create --title "📝 最新の変更差分 (Gemini壁打ち用)" --body-file diff.txt
+          gh issue create --title "📝 最新の変更差分 (Gemini壁打ち用)" --body-file body.md

@@ -263,6 +263,11 @@ details summary{ cursor:pointer; color:var(--ink); }
 .badge.new{ color:var(--ok); border-color:var(--ok); }
 .badge.up{ color:var(--brass); border-color:var(--brass); }
 .badge.aff{ color:var(--brass); border-color:var(--brass); background:var(--brass-soft); }
+.lvbtn{ margin-left:6px; font-size:11px !important; padding:0 7px !important; }
+.growth{ font-size:12px; color:var(--muted); margin-top:4px; }
+.growth b{ color:var(--brass); }
+.sptbl tr.cur td{ background:var(--brass-soft); font-weight:700; }
+.evbadge{ display:inline-block; font-size:11px; font-weight:700; color:var(--brass); border:1px solid var(--brass); border-radius:6px; padding:0 6px; margin-left:4px; }
 .badge.rare{ color:#fff; background:var(--brass); border-color:var(--brass); }
 /* ステータス変化の演出 */
 .st, [data-k="fatigue"], [data-k="cond"]{ position:relative; border-radius:8px; }
@@ -477,7 +482,6 @@ const SYNERGY = {
 const PASSIVES = {
   focus: { n: '集中力', d: '戦闘時 精度+15' },
   guts: { n: 'ど根性', d: '戦闘中1度だけ致死ダメージをHP1で耐える' },
-  quick: { n: '先手必勝', d: '戦闘開始時、全魔法が即発動可能' },
   flow: { n: '魔力循環', d: '全魔法のCT-10%' },
   wall: { n: '鉄壁', d: '被ダメージ-10%' },
   adversity: { n: '逆境', d: 'HP30%以下で与ダメージ+35%' },
@@ -500,8 +504,13 @@ const PASSIVES = {
   noble_blood: { n: '高貴なる血統', d: '被ダメージ-8%、絆の上昇+15%', u: 1 },
   orphan_soul: { n: '逆境の魂', d: 'HP50%以下で与ダメ+25%・被ダメ-15%', u: 1 },
   heir_blood: { n: '大魔導の血', d: '全魔法の威力+12%', u: 1 },
+  blaze_heart: { n: '烈火の闘志', d: '火属性の魔法の威力+15%・会心率+5%' },
+  mana_shell: { n: '魔力障壁', d: '戦闘開始時、魔法防御に応じたバリアを張る' },
+  second_wind: { n: '起死回生', d: '戦闘中1度だけ、HP30%以下になると最大HPの20%回復' },
+  finisher: { n: '追い打ち', d: '相手のHPが30%以下のとき与ダメージ+20%' },
+  bookworm: { n: '読書家', d: '研究の進捗+20%' },
 };
-const COMMON_PASSIVES = ['focus', 'guts', 'quick', 'flow', 'wall', 'adversity', 'hard', 'sleep', 'charm', 'scholar', 'tough', 'sniper'];
+const COMMON_PASSIVES = ['focus', 'guts', 'flow', 'wall', 'adversity', 'hard', 'sleep', 'charm', 'scholar', 'tough', 'sniper', 'mana_shell', 'second_wind', 'finisher', 'bookworm'];
 
 // ---- 人物 ----
 // 人物は2つのグループに分かれる（GROUPS）。
@@ -516,7 +525,7 @@ const EVENT_GAIN = 1.5;   // イベントの人物と交流したときのステ
 const CHARS = {
   // ---------- 五星（盟友候補・同級生） ----------
   leon: { group: 'star', kind: '同級生', busy: null, absentRate: 0.2, absent: ['演習場にこもって、誰とも会おうとしない', '他校の生徒に決闘を申し込みに出かけた'],
-    where: ['放課後の演習場', '購買の前', '寮の談話室', '中庭の噴水の前'], n: 'レオン', sex: '男', first: '俺', tone: 'ぶっきらぼうで負けず嫌い。語尾は「〜だろ」「〜じゃねえか」', role: 'ライバルの同級生', el: 'fire', stat: 'atk', p40: 'adversity', p80: 'quick',
+    where: ['放課後の演習場', '購買の前', '寮の談話室', '中庭の噴水の前'], n: 'レオン', sex: '男', first: '俺', tone: 'ぶっきらぼうで負けず嫌い。語尾は「〜だろ」「〜じゃねえか」', role: 'ライバルの同級生', el: 'fire', stat: 'atk', p40: 'adversity', p80: 'blaze_heart',
     talk: ['「次の模擬戦も俺が勝つ。覚えとけよ」', '「……お前の詠唱、前より速くなってんじゃねえか。ちっ」', '「腹減った。購買行くぞ、お前も来い」', '「理論なんざ知るか……って言いてえけど、そこ、俺にも教えろ」'],
     b40: '「……しょうがねえな。俺が追い詰められた時のやり方、見せてやるよ」',
     b80: '「お前は俺のライバルだ。……他の誰にも負けんじゃねえぞ」',
@@ -716,7 +725,7 @@ function slots(s) { return clamp(2 + Math.floor(s.stats.int / 40), 2, 7); }
 
 function addSpell(s, id) {
   const have = s.spells.find(x => x.id === id);
-  if (have) { if (have.lv < 5) have.lv++; return { up: true, lv: have.lv }; }
+  if (have) { if (have.lv < SPELL_LV_MAX) have.lv++; return { up: true, lv: have.lv }; }
   s.spells.push({ id, lv: 1 });
   if (s.equip.length < slots(s)) s.equip.push(id);
   return { up: false };
@@ -860,7 +869,7 @@ function doResearch(s) {
   const out = { kind: 'research', lines: [] };
   s.fatigue = clamp(s.fatigue + 16 * (has(s, 'tough') ? 0.75 : 1), 0, 100);
   if (rnd() * 100 < failRate(s) * 0.8) { s.cond = Math.max(0, s.cond - 1); out.lines.push('研究に集中できず、成果は出なかった…（調子ダウン）'); out.fail = true; out.events = [{ title: '研究が行き詰まった', text: '疲れで集中できず、成果は出なかった…', bad: true }]; return out; }
-  const inc = Math.round(ri(24, 34) + s.stats.int / 15);
+  const inc = Math.round((ri(24, 34) + s.stats.int / 15) * (has(s, 'bookworm') ? 1.2 : 1));
   s.research += inc;
   const di = gain(s, 'int', (1 + rnd()) * s.grow.int * growMul(s) * 0.4);
   if (s.research >= 100) { s.research -= 100; out.offer = researchOffer(s); }
@@ -883,16 +892,18 @@ function resolveChoice(s, ev, i) {
   return { title: ev.title, choice: c.label, ...o, diff: diffSnap(a, snap(s)) };
 }
 function hintOf(s, c) { return typeof c.hint === 'function' ? c.hint(s) : c.hint; }
-// 絆の上限：絆40・80の節目は、その出来事が起きるまで越えられない（出来事は、能力が目安に届くと起きる）
+// 絆の上限：絆40・80の節目は、その出来事が起きるまで越えられない（出来事は、能力が目安に届いたあとの交流で起きる）
+const BOND_MAX = 100;
+function bondMaxed(s, k) { return s.bonds[k] >= BOND_MAX; }
 function bondCap(s, k) {
   const f = s.flags;
   if (!f['b40' + k]) return 40;
   if (!f['b80' + k]) return 80;
-  return 100;
+  return BOND_MAX;
 }
 function addBond(s, k, v) {
   if (v > 0) v = Math.round(v * (has(s, 'charm') ? 1.5 : 1) * (has(s, 'noble_blood') ? 1.15 : 1));
-  s.bonds[k] = clamp(s.bonds[k] + v, 0, Math.max(bondCap(s, k), s.bonds[k]));
+  s.bonds[k] = clamp(s.bonds[k] + v, 0, Math.min(BOND_MAX, Math.max(bondCap(s, k), s.bonds[k])));
 }
 function statHint(k, v) { return `${STAT_NAME[k]}+${k === 'hp' ? v * 3 : v}`; }
 
@@ -968,7 +979,7 @@ function fxHint(fx, cid) {
   }).join('・');
 }
 function fxChoice(label, fx, res, cid, after) {
-  return { label, hint: s => fxHint(fx, cid) + (fx.bond && s && s.bonds[cid] >= bondCap(s, cid) ? `（${CHARS[cid].n}との絆は🔒で止まっている）` : ''), fn: s => { applyFx(s, fx, cid); if (after) after(s); return res; } };
+  return { label, hint: s => fxHint(fx, cid) + (fx.bond && s ? (bondMaxed(s, cid) ? `（${CHARS[cid].n}との絆は最大）` : s.bonds[cid] >= bondCap(s, cid) ? `（${CHARS[cid].n}との絆は🔒で止まっている）` : '') : ''), fn: s => { applyFx(s, fx, cid); if (after) after(s); return res; } };
 }
 
 // ---- 交流 ----
@@ -1024,11 +1035,14 @@ function bondNext(s, cid) {
   if (s.partner === cid) return '盟友';
   const li = lockInfo(s, cid);
   if (li) return `🔒 ${STAT_NAME[li.stat]}が${li.need}になると関係が深まる（いま${li.cur}）`;
-  const f = s.flags, soon = '（まもなく）';
-  if (b < 20) return `絆20：物語「${CHAR_STORY[cid].s20.title}」`;
-  if (!f['b40' + cid]) return `絆40：特性【${PASSIVES[c.p40].n}】に挑戦${b >= 40 ? soon : ''}`;
-  if (b < 60) return `絆60：物語「${CHAR_STORY[cid].s60.title}」`;
-  if (!f['b80' + cid]) return `絆80：秘伝魔法【${SPELLS.find(x => x.el === c.el && x.rare).n}】に挑戦${b >= 80 ? soon : ''}`;
+  const f = s.flags;
+  const label = { 20: `物語「${CHAR_STORY[cid].s20.title}」`, 40: `特性【${PASSIVES[c.p40].n}】に挑戦`, 60: `物語「${CHAR_STORY[cid].s60.title}」`, 80: `秘伝魔法【${SPELLS.find(x => x.el === c.el && x.rare).n}】に挑戦` };
+  const due = milestoneDue(s, cid);   // 節目に届いていて、交流すれば起きる出来事
+  if (due && label[due]) return `✨ 絆${due}：${label[due]}（交流で発生）`;
+  if (b < 20) return `絆20：${label[20]}`;
+  if (!f['b40' + cid]) return `絆40：${label[40]}`;
+  if (b < 60) return `絆60：${label[60]}`;
+  if (!f['b80' + cid]) return `絆80：${label[80]}`;
   if (!star) return b < 100 ? `絆100：餞別（特性【${PASSIVES[c.seal].n}】）` : '絆は最大';
   if (b < 100) return s.partner ? '絆100：かけがえのない友' : '絆100：盟友の誓い';
   if (!s.partner) return '盟友の誓いを立てられる';
@@ -1039,8 +1053,19 @@ function storyEvent(s, cid, key) {
   return mkEvent(`${CHARS[cid].n}：${st.title}`, st.text,
     st.choices.map((ch, i) => fxChoice(ch.label, ch.fx, ch.res, cid, s => { s.flags[key + cid] = i + 1; })), { char: cid, big: key === 's60' });
 }
+// 交流したときに起きる節目の出来事があるか（副作用なし）。あればその節目（20/40/60/80/100）、なければ 0
+function milestoneDue(s, cid) {
+  const c = CHARS[cid], f = s.flags, b = s.bonds[cid];
+  if (!isUnlocked(s, cid)) return 0;
+  if (b >= 20 && !f['s20' + cid]) return 20;
+  if (b >= 40 && !f['b40' + cid] && statReady(s, cid, 40)) return 40;
+  if (b >= 60 && !f['s60' + cid]) return 60;
+  if (b >= 80 && !f['b80' + cid] && statReady(s, cid, 80)) return 80;
+  if (b >= 100 && !f['b100' + cid] && (c.group === 'event' || s.partner !== cid)) return 100;
+  return 0;
+}
 // ---- 絆の節目（20物語・40特性・60物語・80秘伝・100誓い/餞別） ----
-// 交流でもイベントでも、絆が節目を越えたらここで出来事を作る。flags で一度きりにしている。
+// 節目の出来事は交流したときだけ作る（ターン開始時は flags['wall'+人物] に到達を記録するだけ）。flags で一度きりにしている。
 // fromSocial：交流の最中か（盟友の誓いを保留したとき、次の交流であらためて申し込まれるようにするため）
 function milestoneEvents(s, cid, fromSocial) {
   const c = CHARS[cid], f = s.flags, b = s.bonds[cid], out = [];
@@ -1121,6 +1146,8 @@ function doSocial(s, cid) {
   cleanPending(s);
   const ms = milestoneEvents(s, cid, true);
   out.events.push(...ms);
+  const due = milestoneDue(s, cid);   // 誓いを保留したときなどは、到達フラグを残す
+  if (due) s.flags['wall' + cid] = due; else delete s.flags['wall' + cid];
   // 節目の出来事がなければ、つかみ損ねた技・特性に再挑戦できることがある
   if (!ms.length) {
     const pend = s.pending.filter(a => a.src === cid);
@@ -1322,8 +1349,8 @@ function charEvents(s) {
 // 並び順（シナリオの turnEventOrder）を変えると同じ種でも結果が変わる点に注意。
 // c = { L: 積むリスト, t: 通算の月, f: s.flags, fat(s,v): 疲労増減, cond(s,v): 調子増減 }
 const EVENTS = {
-  milestones: { desc: '絆の節目（イベントで絆が上がった分）', run(s, c) {
-    for (const k of Object.keys(CHARS)) c.L.push(...milestoneEvents(s, k, false));
+  milestones: { desc: '絆の節目への到達を記録（出来事は交流したときに起きる）', run(s, c) {
+    for (const k of Object.keys(CHARS)) { const due = milestoneDue(s, k); if (due) c.f['wall' + k] = due; else delete c.f['wall' + k]; }
   } },
   starEvent: { desc: '五星のランダムイベント', run(s, c) {
     if (rnd() < SC.starEventRate) c.L.push(starEvent(s, c));
@@ -1464,10 +1491,10 @@ function equipSyn(s) { return synergyOf(affOf(s), s.equip.map(id => SPELL[id].el
 function spellStats(s, entry, enemyDef) {
   const sp = entry.id === 'basic' ? BASIC : SPELL[entry.id]; const lv = entry.lv || 1;
   const syn = equipSyn(s); const P = (id) => s.passives.includes(id);
-  const lvMul = 1 + 0.12 * (lv - 1);
+  const lvMul = spellLvMul(lv);
   const ctRed = Math.min(0.3, s.stats.int / 800) + (P('flow') ? 0.1 : 0);
   const ct = Math.max(1, Math.round((sp.ct - (lv >= 3 ? 1 : 0)) * (1 - ctRed)));
-  const potMul = lvMul * (P('heir_blood') ? 1.12 : 1) * (P('seal_ord') ? 1.1 : 1) * affPower(affOf(s), sp.el);
+  const potMul = lvMul * (P('heir_blood') ? 1.12 : 1) * (P('seal_ord') ? 1.1 : 1) * (P('blaze_heart') && sp.el === 'fire' ? 1.15 : 1) * affPower(affOf(s), sp.el);
   const def = s.stats.def;
   const r = { sp, lv, ct, baseCt: sp.ct, pow: +(sp.pow ? sp.pow * potMul : 0).toFixed(2) };
   if (sp.t === 'dmg') {
@@ -1484,6 +1511,19 @@ function spellStats(s, entry, enemyDef) {
   }
   return r;
 }
+// 魔法Lvごとの成長（Lvが1上がるごとに威力・効果量×0.12加算、Lv3以上でCT-1）。成長表の1行分を返す
+const SPELL_LV_MAX = 5;
+function spellLvMul(lv) { return 1 + 0.12 * (lv - 1); }
+function spellLevelRow(s, id, lv, enemyDef) {
+  const st = spellStats(s, { id, lv }, enemyDef); const sp = st.sp; const m = spellLvMul(lv);
+  let main = '―';
+  if (st.total != null) main = `予想ダメージ${st.hits > 1 ? `${st.hit}×${st.hits}` : st.total}`;
+  else if (st.heal != null) main = `回復${st.heal}`;
+  else if (st.shield != null) main = `バリア${st.shield}`;
+  else if (sp.t === 'buff') main = sp.stat === 'regen' ? `毎tick最大HPの${+(sp.val * m * 100).toFixed(1)}%回復` : `${STAT_NAME[sp.stat]}+${Math.round(sp.val * m * 100)}%`;
+  else if (sp.t === 'debuff') main = '効果量はLvで変わらない';
+  return { lv, mul: +m.toFixed(2), pow: sp.hits ? `${st.pow}×${sp.hits}` : (sp.pow ? st.pow : '―'), ct: st.ct, main, perTick: st.perTick };
+}
 function nextEnemyDef(turn) { return SC.nextEnemyDef(monthIdx(turn)); }
 
 
@@ -1495,13 +1535,13 @@ function makeFighter(name, stats, spells, equip, passives, el, aff) {
   const P = (id) => passives.includes(id);
   let ctRed = Math.min(0.3, stats.int / 800) + (P('flow') ? 0.1 : 0);
   const slotsArr = [...eqSp, BASIC].map(sp => {
-    const lvMul = 1 + 0.12 * ((sp.lv || 1) - 1);
+    const lvMul = spellLvMul(sp.lv || 1);
     const ct = Math.max(1, Math.round((sp.ct - ((sp.lv || 1) >= 3 ? 1 : 0)) * (1 - ctRed)));
-    return { sp, lvMul, ct, cd: P('quick') ? 0 : Math.ceil(ct / 2) };
+    return { sp, lvMul, ct, cd: Math.ceil(ct / 2) };
   });
   const mhp = Math.round(stats.hp * (P('bulwark') ? 1.15 : 1) * (P('seal_garde') ? 1.1 : 1));
   return { name, el, aff, base: { ...stats }, maxHp: mhp, hp: mhp, shield: 0, slots: slotsArr, syn, passives,
-    buffs: [], burn: 0, burnT: 0, healCount: 0, gutsUsed: false, P };
+    buffs: [], burn: 0, burnT: 0, healCount: 0, gutsUsed: false, windUsed: false, P };
 }
 
 function eff(f, k) {
@@ -1522,6 +1562,7 @@ function battle(A, B, maxT = 80) {
   const push = (e) => log.push({ ...e, hA: Math.max(0, Math.round(A.hp)), hB: Math.max(0, Math.round(B.hp)), sA: Math.round(A.shield), sB: Math.round(B.shield) });
   for (const f of [A, B]) if (f.intro) push({ t: 0, who: f.name, text: f.intro, kind: 'buff' });
   for (const f of [A, B]) if (f.P('intel')) { const o = f === A ? B : A; o.slots.forEach(x => x.cd += 1); push({ t: 0, who: f.name, text: `${f.name}の情報戦！ ${o.name}の詠唱が遅れる（CT+1）`, kind: 'debuff' }); }
+  for (const f of [A, B]) if (f.P('mana_shell')) { f.shield = Math.round(eff(f, 'def') * 0.5 + 15); push({ t: 0, who: f.name, text: `${f.name}の魔力障壁！ ${f.shield}のバリアを張った`, kind: 'buff' }); }
   for (let t = 1; t <= maxT; t++) {
     // 精度が高い方が先に動く。同値ならランダム（以前は常に A＝プレイヤーが先で、同値の対戦に偏りがあった）
     const ea = eff(A, 'acc'), eb = eff(B, 'acc');
@@ -1536,6 +1577,8 @@ function battle(A, B, maxT = 80) {
         if (me.burnDrain && op.hp > 0) { op.hp = Math.min(op.maxHp, op.hp + d); push({ t, who: op.name, text: `${op.name}は毒から${d}吸収`, kind: 'heal' }); }
         if (me.hp <= 0) break;
       }
+      // 起死回生（1度だけ）
+      if (me.P('second_wind') && !me.windUsed && me.hp < me.maxHp * 0.3) { const h = Math.round(me.maxHp * 0.2); me.windUsed = true; me.hp = Math.min(me.maxHp, me.hp + h); push({ t, who: me.name, text: `${me.name}の起死回生！ HPが${h}回復`, kind: 'heal' }); }
       // 再生（世界樹の恵み・自然治癒）
       const rg = buffVal(me, 'regen') + (me.P('regrowth') ? 0.01 : 0);
       if (rg > 0 && me.hp < me.maxHp) { const h = Math.round(me.maxHp * rg); me.hp = Math.min(me.maxHp, me.hp + h); push({ t, who: me.name, text: `${me.name}は再生で${h}回復`, kind: 'heal' }); }
@@ -1570,7 +1613,7 @@ function dealRaw(tg, d) {
 }
 function cast(me, op, slot, t, push) {
   const sp = slot.sp; const E = (x) => ({ t, who: me.name, el: sp.el, ...x });
-  const potMul = slot.lvMul * (me.P('heir_blood') ? 1.12 : 1) * (me.P('seal_ord') ? 1.1 : 1) * affPower(me.aff, sp.el);
+  const potMul = slot.lvMul * (me.P('heir_blood') ? 1.12 : 1) * (me.P('seal_ord') ? 1.1 : 1) * (me.P('blaze_heart') && sp.el === 'fire' ? 1.15 : 1) * affPower(me.aff, sp.el);
   if (sp.t === 'dmg') {
     const hits = sp.hits || 1; let total = 0, hitN = 0, crits = 0, gutsMsg = false;
     for (let h = 0; h < hits; h++) {
@@ -1583,7 +1626,8 @@ function cast(me, op, slot, t, push) {
       if (me.syn.includes('fire')) atk *= 1.10;
       if (me.P('adversity') && me.hp < me.maxHp * 0.3) atk *= 1.35;
       if (me.P('orphan_soul') && me.hp < me.maxHp * 0.5) atk *= 1.25;
-      const critR = 0.05 + eff(me, 'acc') / 2000 + (sp.crit || 0) + (me.syn.includes('dark') ? 0.1 : 0) + (me.P('sniper') ? 0.1 : 0) + (me.P('noir_bless') ? 0.08 : 0) + (me.P('seal_luka') ? 0.05 : 0);
+      if (me.P('finisher') && op.hp < op.maxHp * 0.3) atk *= 1.2;
+      const critR = 0.05 + eff(me, 'acc') / 2000 + (sp.crit || 0) + (me.syn.includes('dark') ? 0.1 : 0) + (me.P('sniper') ? 0.1 : 0) + (me.P('noir_bless') ? 0.08 : 0) + (me.P('seal_luka') ? 0.05 : 0) + (me.P('blaze_heart') ? 0.05 : 0);
       if (rnd() < critR) { atk *= 1.8; crits++; }
       let dmg = atk * (100 / (100 + eff(op, 'def'))) * matchMul(sp.el, op);
       if (op.P('wall')) dmg *= 0.9;
@@ -1808,7 +1852,7 @@ function setScenario(id) {
 }
 setScenario('main');
 
-if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, ORIGINS, newStudent, doTrain, doResearch, doSocial, doRest, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, PASSIVES, milestoneEvents, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, STAR_EVENTS, starEvent, GROUPS, EVENT_GAIN, bondNext, CHAR_STORY, applyFx, fxHint, CHARS, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
+if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, ORIGINS, newStudent, doTrain, doResearch, doSocial, doRest, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, STAR_EVENTS, starEvent, GROUPS, EVENT_GAIN, bondNext, CHAR_STORY, applyFx, fxHint, CHARS, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
 
 </script>
 <script>
@@ -1850,6 +1894,31 @@ function spellCard(id) {
     <div class="d">${spellDesc(sp)}</div><div class="kv">${kv.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('')}</div>
     </div>`;
 }
+// 魔法の成長表（Lv1〜最大の性能。次の試験相手に当てたときの目安）
+function growthTable(id) {
+  const have = S.spells.find(x => x.id === id); const cur = have ? have.lv : 0; const ed = nextEnemyDef(S.turn);
+  const rows = []; for (let lv = 1; lv <= SPELL_LV_MAX; lv++) rows.push(spellLevelRow(S, id, lv, ed));
+  return `<div class="tblwrap"><table class="sptbl" style="min-width:420px"><thead><tr><th>Lv</th><th>倍率</th><th>威力</th><th>CT</th><th>効果</th></tr></thead><tbody>
+    ${rows.map(r => `<tr class="${r.lv === cur ? 'cur' : ''}"><td>Lv${r.lv}${r.lv === cur ? ' ◀いま' : ''}</td><td>×${r.mul}</td><td>${r.pow}</td><td>${r.ct}</td><td>${r.main}</td></tr>`).join('')}
+  </tbody></table></div>`;
+}
+function showGrowth(id) {
+  const sp = SPELL[id];
+  openModal(`<div class="pop"><div class="kicker">魔法の成長</div><h2>${elChip(sp.el)} ${sp.n}</h2>
+    ${growthTable(id)}
+    <p class="note">Lvが1上がるごとに威力・回復量・強化の効果量が基本の12%ずつ増えます（Lv5で×1.48）。Lv3以上でCTが1短くなります。弱体化の効果量はLvで変わりません。数値は今の能力で次の試験相手に当てたときの目安です。</p>
+    <div class="row"><button class="btn main" id="growClose">閉じる</button></div></div>`);
+  $('#growClose').onclick = closeModal;
+}
+// Lv from→to の変化を1行で
+function lvDiffText(id, from, to) {
+  const ed = nextEnemyDef(S.turn); const a = spellLevelRow(S, id, from, ed), b = spellLevelRow(S, id, to, ed);
+  const parts = [`倍率×${a.mul}→<b>×${b.mul}</b>`];
+  if (a.pow !== b.pow) parts.push(`威力${a.pow}→<b>${b.pow}</b>`);
+  if (a.ct !== b.ct) parts.push(`CT${a.ct}→<b>${b.ct}</b>`);
+  if (a.main !== b.main) parts.push(`${a.main}→<b>${b.main}</b>`);
+  return `Lv${from}→Lv${to}：` + parts.join('・');
+}
 function passiveCard(p) { return `<div class="gotcard"><span class="note">特性を獲得</span><div class="n">${PASSIVES[p].u ? '✦ ' : ''}${PASSIVES[p].n}</div><div class="d">${PASSIVES[p].d}</div></div>`; }
 // 関係の壁（絆40・80を越えるのに必要な能力）
 function gateMark(g, cur) { return g.state === 'passed' ? '<span class="gp">越えた</span>' : g.state === 'ready' ? '<span class="gr">✓ 届いている</span>' : `<span class="gs">🔒 あと${g.need - cur}</span>`; }
@@ -1865,14 +1934,15 @@ function affChips(s) {
 function chooseSocial() {
   if (BUSY) return;
   const card = k => { const c = CHARS[k]; const b = S.bonds[k]; const away = S.absent && S.absent[k];
+    const due = milestoneDue(S, k);
     return `<button class="scard ${S.partner === k ? 'partner' : ''} ${away ? 'away' : ''}" ${away ? 'disabled aria-disabled="true"' : `data-soc="${k}"`}>
-      <div>${elChip(c.el)} <b>${c.n}</b> <span class="sex ${c.sex === '男' ? 'm' : 'f'}">${c.sex === '男' ? '♂' : '♀'}</span> <span class="kind">${c.kind}</span>${S.partner === k ? ' <b class="pbadge">盟友</b>' : ''}</div>
+      <div>${elChip(c.el)} <b>${c.n}</b>${due ? ` <span class="evbadge">✨ 絆${due}の出来事</span>` : ''} <span class="sex ${c.sex === '男' ? 'm' : 'f'}">${c.sex === '男' ? '♂' : '♀'}</span> <span class="kind">${c.kind}</span>${S.partner === k ? ' <b class="pbadge">盟友</b>' : ''}</div>
       <div class="note">${c.role}・${STAT_NAME[c.stat]}が伸びる${c.group === 'event' ? '（多め）' : ''}</div>
       <div class="sbar"><div class="bar"><span style="width:${b}%"></span></div><span>${b}</span></div>
       <div class="snext">${away ? `今週は不在：${esc(away)}` : esc(bondNext(S, k))}</div></button>`; };
   const sec = g => `<h3 class="ghead">${GROUPS[g].n}<span class="note">（${GROUPS[g].d}）</span></h3><div class="sgrid">${Object.keys(CHARS).filter(k => CHARS[k].group === g).map(card).join('')}</div>`;
   openModal(`<div class="pop"><div class="kicker">交流</div><h2>誰と過ごす？</h2>
-    <p class="txt">今週会えるのは${socialTargets(S).length}人。五星との絆は、交流よりも日々の出来事で深まります。絆100で、五星のうち1人と盟友になれます。</p>
+    <p class="txt">今週会えるのは${socialTargets(S).length}人。五星との絆は、交流よりも日々の出来事で深まります。絆100で、五星のうち1人と盟友になれます。絆の節目（✨）の出来事は、その人と交流したときに起きます。</p>
     ${sec('star')}${sec('event')}<div class="row"><button class="btn" id="socCancel">やめる</button></div></div>`);
   document.querySelectorAll('[data-soc]').forEach(b => b.onclick = () => { const k = b.dataset.soc; $('#ov').classList.remove('show'); act(() => doSocial(S, k)); });
   $('#socCancel').onclick = closeModal;
@@ -1883,10 +1953,10 @@ function speaker(cid) {
 }
 function bondRow(b) {
   const c = CHARS[b.k]; const v = b.to - b.from;
-  const nt = [20, 40, 60, 80, 100].find(x => b.to < x);   // 次の節目（内容は bondNext と同じ文言）
-  return `<div class="bondbox"><div class="bh"><span>${c.n}との絆</span><span><strong>${b.from} → ${b.to}</strong> <span class="dlt up">+${v}</span></span></div>
+  const nt = [20, 40, 60, 80, BOND_MAX].find(x => b.to < x);   // 次の節目（内容は bondNext と同じ文言）
+  return `<div class="bondbox"><div class="bh"><span>${c.n}との絆</span><span><strong>${b.from} → ${b.to}</strong> ${b.to >= BOND_MAX && !v ? '<span class="dlt up">MAX</span>' : `<span class="dlt up">+${v}</span>`}</span></div>
     <div class="bar"><span style="width:${b.from}%;border-radius:99px 0 0 99px"></span><span class="gain" style="width:${v}%"></span></div>
-    <div class="note">${nt ? `絆${nt}まであと${nt - b.to}：${esc(bondNext(S, b.k).replace(/^絆\d+：/, ''))}` : esc(bondNext(S, b.k))}</div></div>`;
+    <div class="note">${(() => { const nx = bondNext(S, b.k); return nt && !nx.startsWith('✨') ? `絆${nt}まであと${nt - b.to}：${esc(nx.replace(/^絆\d+：/, ''))}` : esc(nx); })()}</div></div>`;
 }
 
 function showPopups(list, done) {
@@ -1982,6 +2052,7 @@ function researchCard(id) {
     <div>${elChip(sp.el)} ${tag}${sp.rare ? '<span class="badge rare">レア</span>' : ''}</div>
     <div class="n">${sp.n}</div><div class="d">${spellDesc(sp).split('・').filter(t => !/^(CT|威力)/.test(t)).join('・') || '攻撃魔法'}</div>
     <div class="kv">${kv.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('')}</div>
+    ${have && have.lv < SPELL_LV_MAX ? `<div class="growth">${lvDiffText(id, have.lv, entry.lv)}</div>` : ''}
     <div class="d" style="margin-top:6px">${have ? (have && S.equip.includes(id) ? '装備中の魔法が強化されます' : '未装備の魔法が強化されます') : (free ? '空き枠に自動で装備されます' : '装備枠が満杯のため控えに入ります')}</div>${synNote}
     <span class="pickl">これを習得する</span></button>`;
 }
@@ -2068,7 +2139,7 @@ function render() {
         <div class="lessons">${STATS.map(k => `<button data-train="${k}">${STAT_NAME[k]}<small>${SUBJECT[k]}</small></button>`).join('')}</div>
         <div class="others">
           <button data-cmd="research">研究<small>${s.research >= 100 ? '次の研究で成果！' : '進捗 ' + s.research + '%'}</small><span class="prog"><span style="width:${Math.min(100, s.research)}%"></span></span></button>
-          <button data-cmd="social">交流<small>今週会える：${socialTargets(s).length}人</small></button>
+          <button data-cmd="social">交流<small>今週会える：${socialTargets(s).length}人${(() => { const n = socialTargets(s).filter(k => milestoneDue(s, k)).length; return n ? `・✨節目${n}人` : ''; })()}</small></button>
           <button data-cmd="rest">休息<small>疲労回復</small></button>
         </div>
         <div class="risk ${fr >= 20 ? 'hot' : ''}">${fr > 0 ? `授業の失敗率 ${Math.round(fr)}%。休息を検討しましょう。` : '体調は万全。失敗の心配はありません。'}</div>
@@ -2089,6 +2160,7 @@ function render() {
   });
   document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { TAB = b.dataset.tab; render(); });
   document.querySelectorAll('[data-eq]').forEach(b => b.onclick = () => toggleEquip(b.dataset.eq));
+  document.querySelectorAll('[data-grow]').forEach(b => b.onclick = () => showGrowth(b.dataset.grow));
   $('#theme').onclick = toggleTheme;
   $('#quit').onclick = confirmRestart;
   requestAnimationFrame(animateStats);
@@ -2108,7 +2180,7 @@ function tabBody() {
     return `${MSG ? `<p class="warnmsg" role="alert">${esc(MSG)}</p>` : ''}<div class="syn">${synTxt}</div><div class="syn">${defenseInfo(s)} 相性：火→木→水→火、光⇔闇（有利×${MATCH.strong}・不利×${MATCH.weak}）</div>
       ${free > 0 && s.spells.length > s.equip.length ? `<p class="note">装備枠に${free}つ空きがあります。</p>` : ''}
       ${spellTable()}
-      <p class="note">予想ダメージは次の試験相手に当てたときの目安です。効率が高い魔法ほど、同じ時間でより多くのダメージを与えます。同じ魔法を研究で引くとLvが上がります（最大Lv5）。</p>`;
+      <p class="note">予想ダメージは次の試験相手に当てたときの目安です。効率が高い魔法ほど、同じ時間でより多くのダメージを与えます。同じ魔法を研究で引くとLvが上がります（最大Lv5）。「成長表」でLvごとの強さを確認できます。</p>`;
   }
   return `<h3 style="margin:0 0 8px;font-size:15px">特性</h3>
     <div class="plist">${s.passives.length ? s.passives.map(p => `<div>${PASSIVES[p].u ? '✦ ' : ''}${PASSIVES[p].n}<span>${PASSIVES[p].d}</span></div>`).join('') : '<p class="note">まだ特性はありません。交流や試験の合格で獲得できます。</p>'}</div>
@@ -2121,7 +2193,7 @@ function tabBody() {
     ${['star', 'event'].map(g => `<h3 class="ghead">${GROUPS[g].n}<span class="note">（${GROUPS[g].d}）</span></h3>` + Object.entries(CHARS).filter(([, c]) => c.group === g).map(([k, c]) => `<div class="bond"><span>${c.n} <span class="sex ${c.sex === '男' ? 'm' : 'f'}" title="${c.sex}性">${c.sex === '男' ? '♂' : '♀'}</span></span><div class="bar"><span style="width:${s.bonds[k]}%"></span></div><span class="note">${s.bonds[k]}</span></div>
       <div class="note" style="margin:-2px 0 2px">${c.role}（${ELEM[c.el].n}）</div>
       <div class="note" style="margin:0 0 8px">${s.partner === k ? '<b class="pbadge">盟友</b> ' : ''}次：${bondNext(s, k)}<br>${s.absent && s.absent[k] ? `<span class="awaytxt">今週は不在（${esc(s.absent[k])}）</span>` : '<span class="heretxt">今週は会える</span>'}${c.busy ? `・毎月第${c.busy.week}週は不在${s.absent && s.absent[k] === c.busy.reason ? '' : `（${c.busy.reason}）`}` : ''}${c.absentRate && c.absentRate > 0.3 ? '・よく姿を消す' : ''}</div>`).join('')).join('')}
-    <p class="note">絆が20・40・60・80・100に届くたびに、物語や特性・秘伝魔法の習得が起きます。絆40・80から先へ進むには、その人の得意な能力を鍛える必要があります。足りないあいだは、絆がそこで止まります（🔒）。五星との絆は日々の出来事で大きく深まり、絆100で1人と盟友になれます。イベントの人物は盟友になれませんが、交流で伸びるステータスが多めで、絆100で特別な餞別をくれます。</p>
+    <p class="note">絆が20・40・60・80・100に届いたあと、その人と交流すると、物語や特性・秘伝魔法の習得が起きます（✨が目印）。絆は100で最大です。絆40・80から先へ進むには、その人の得意な能力を鍛える必要があります。足りないあいだは、絆がそこで止まります（🔒）。五星との絆は日々の出来事で大きく深まり、絆100で1人と盟友になれます。イベントの人物は盟友になれませんが、交流で伸びるステータスが多めで、絆100で特別な餞別をくれます。</p>
 `;
 }
 
@@ -2136,7 +2208,7 @@ function spellTable() {
     const pw = sp.pow ? (sp.hits ? `${st.pow}×${sp.hits}` : st.pow) : '―';
     const ctTxt = st.ct !== st.baseCt ? `${st.ct}<small class="note">（${st.baseCt}）</small>` : st.ct;
     const eff = st.heal != null ? `回復${st.heal}` : st.shield != null ? `盾${st.shield}` : sp.t === 'buff' || sp.t === 'debuff' ? `${sp.dur}tick` : '';
-    return `<tr class="${eq ? '' : 'off'}"><td>${basic ? '' : elChip(sp.el) + ' '}<span class="nm">${sp.n}</span> <small class="note">${basic ? '基本' : 'Lv' + x.lv}${sp.rare ? '・レア' : ''}</small>${!basic && affRole(affOf(s), sp.el) ? ` <span class="badge aff">${{ main: '主適性', pure: '純化', sub: 'サブ' }[affRole(affOf(s), sp.el)]}</span>` : ''}<span class="ds">${spellDesc(sp).split('・').filter(t => !/^(CT|威力)/.test(t)).join('・') || '基本攻撃'}</span></td>
+    return `<tr class="${eq ? '' : 'off'}"><td>${basic ? '' : elChip(sp.el) + ' '}<span class="nm">${sp.n}</span> <small class="note">${basic ? '基本' : 'Lv' + x.lv}${sp.rare ? '・レア' : ''}</small>${basic ? '' : `<button class="lvbtn" data-grow="${x.id}">成長表</button>`}${!basic && affRole(affOf(s), sp.el) ? ` <span class="badge aff">${{ main: '主適性', pure: '純化', sub: 'サブ' }[affRole(affOf(s), sp.el)]}</span>` : ''}<span class="ds">${spellDesc(sp).split('・').filter(t => !/^(CT|威力)/.test(t)).join('・') || '基本攻撃'}</span>${basic ? '' : `<span class="growth">${x.lv < SPELL_LV_MAX ? '次 ' + lvDiffText(x.id, x.lv, x.lv + 1) : '最大Lv'}</span>`}</td>
       <td>${pw}</td><td>${ctTxt}</td><td>${st.total != null ? (st.hits > 1 ? `${st.hit}×${st.hits}` : st.total) : '―'}</td>
       <td class="${st.perTick === best ? 'best' : ''}">${st.perTick != null ? st.perTick : '―'}</td><td>${eff}</td>
       <td>${basic ? '<span class="note">常時</span>' : `<button class="${eq ? 'on' : ''}" data-eq="${x.id}" aria-pressed="${eq}">${eq ? '装備中' : '装備'}</button>`}</td></tr>`; }).join('')}
