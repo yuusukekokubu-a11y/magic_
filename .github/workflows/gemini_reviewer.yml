@@ -1,117 +1,46 @@
-name: Generate Claude Instruction
+name: Post Diff to Issue
 on:
   push:
     branches: [ main ]
-    paths-ignore:
-      - '.github/**'
   workflow_dispatch:
 
-concurrency:
-  group: claude-instruction
-  cancel-in-progress: false
-
 jobs:
-  analyze:
-    name: Gemini で改修指示書を作成して Issue 化
+  post_diff:
     runs-on: ubuntu-latest
     permissions:
       issues: write
       contents: read
     steps:
-      - name: リポジトリを checkout
-        uses: actions/checkout@v5
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Python をセットアップ
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-      - name: Gemini で指示書を生成
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL: gemini-flash-latest
-          BEFORE_SHA: ${{ github.event.before }}
-        run: |
-          cat << 'EOF' > run_gemini.py
-          import json, os, subprocess, sys, urllib.error, urllib.request
-
-          MAX_CHARS = 100_000
-          PATHS = ['magic_academy_game.html', 'src/', 'README.md', 'docs/', ':(exclude)dist/']
-
-          key = os.environ.get('GEMINI_API_KEY', '')
-          if not key:
-              sys.exit('GEMINI_API_KEY が未設定です (Settings > Secrets を確認)')
-
-          before = os.environ.get('BEFORE_SHA', '')
-          if not before or set(before) == {'0'}:
-              before = 'HEAD~1'
-          try:
-              diff = subprocess.check_output(
-                  ['git', 'diff', before, 'HEAD', '--', *PATHS], text=True)
-          except subprocess.CalledProcessError as e:
-              sys.exit(f'git diff に失敗しました: {e}')
-          if not diff.strip():
-              print('対象ファイルに差分がないため終了します')
-              sys.exit(0)
-          if len(diff) > MAX_CHARS:
-              diff = diff[:MAX_CHARS] + '\n\n(以下省略: 差分が大きすぎるため切り詰めました)'
-
-          prompt = ("以下の最新のGit差分を元に、次に実装すべき内容をClaudeに渡すための明確な指示書を作成してください。"
-                    "Claudeのトークン節約のため、修正が必要な最小限のコードのみを含めてください。\n\n【差分】\n" + diff)
-
-          model = os.environ.get('GEMINI_MODEL', 'gemini-flash-latest')
-          url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent'
-          req = urllib.request.Request(
-              url,
-              data=json.dumps({'contents': [{'parts': [{'text': prompt}]}]}).encode('utf-8'),
-              headers={'Content-Type': 'application/json', 'x-goog-api-key': key},
-              method='POST')
-          try:
-              with urllib.request.urlopen(req, timeout=300) as r:
-                  data = json.load(r)
-          except urllib.error.HTTPError as e:
-              msg = f'Gemini API HTTP {e.code}: {e.read().decode("utf-8", "replace")[:2000]}'
-              if e.code == 404:
-                  try:
-                      lr = urllib.request.Request(
-                          'https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000',
-                          headers={'x-goog-api-key': key})
-                      with urllib.request.urlopen(lr, timeout=60) as r:
-                          names = [m['name'].removeprefix('models/') for m in json.load(r).get('models', [])
-                                   if 'generateContent' in m.get('supportedGenerationMethods', [])]
-                      msg += '\n利用可能なモデル: ' + ', '.join(names)
-                  except Exception as le:
-                      msg += f'\n(モデル一覧の取得にも失敗: {le})'
-              sys.exit(msg)
-          except urllib.error.URLError as e:
-              sys.exit(f'Gemini API 接続エラー: {e.reason}')
-
-          block = data.get('promptFeedback', {}).get('blockReason')
-          if block:
-              sys.exit(f'入力が安全フィルタで拒否されました: {block}')
-          cands = data.get('candidates') or []
-          if not cands:
-              sys.exit(f'応答に candidates がありません: {json.dumps(data)[:2000]}')
-          c = cands[0]
-          text = ''.join(p.get('text', '') for p in c.get('content', {}).get('parts', []))
-          if not text.strip():
-              sys.exit(f'応答が空です (finishReason={c.get("finishReason")})')
-
-          with open('instruction.md', 'w', encoding='utf-8') as f:
-              f.write(text)
-              f.write(f'\n\n---\n対象 commit: {os.environ.get("GITHUB_SHA", "")}\n')
-          EOF
-          python run_gemini.py
-      - name: 指示書を Issue に投稿
-        if: hashFiles('instruction.md') != ''
+      - name: Create Diff Issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          LABEL="claude-instruction"
-          gh label create "$LABEL" --color 5319e7 --description "Gemini が生成した Claude 用指示書" --force
-          EXISTING=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number')
-          if [ -n "$EXISTING" ]; then
-            gh issue comment "$EXISTING" --body-file instruction.md
-          else
-            gh issue create --title "🤖 Claude用 次の改修指示書" --label "$LABEL" --body-file instruction.md
-          fi
+          # 最新の変更差分を取得（初回などで差分がない場合のエラーも回避）
+          git diff HEAD~1 > diff.txt 2>/dev/null || echo "変更差分がありません、または初回コミットです。" > diff.txt
+
+          # Gemini に貼り付けやすい本文を作る：変更の要約（commit message）・変更ファイル一覧・差分
+          # 差分はコードブロックで囲み（Markdown として崩れないように）、Issue 本文の上限（約65,000字）を超えないよう切り詰める
+          {
+            echo "対象 commit: ${GITHUB_SHA}"
+            echo
+            echo "## 変更の要約（commit message）"
+            git log --no-merges --format='### %s%n%n%b' HEAD~1..HEAD 2>/dev/null || true
+            echo "## 変更ファイル"
+            echo '```'
+            git diff --stat HEAD~1 2>/dev/null || true
+            echo '```'
+            echo "## 差分"
+            echo '````diff'
+            head -c 50000 diff.txt
+            echo
+            echo '````'
+            if [ "$(wc -c < diff.txt)" -gt 50000 ]; then
+              echo "※ 差分が大きいため途中で切り詰めました。全体は ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA} で確認してください。"
+            fi
+          } > body.md
+
+          # Issueを作成して差分を投稿
+          gh issue create --title "📝 最新の変更差分 (Gemini壁打ち用)" --body-file body.md
