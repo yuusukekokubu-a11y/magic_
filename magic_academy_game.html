@@ -88,8 +88,11 @@ button:focus-visible, input:focus-visible{ outline:2px solid var(--brass); outli
 .ero.warn .bar > span{ background:#7a3fb0; }
 .ero.bad .bar > span{ background:var(--danger); }
 .ero small{ display:block; color:var(--muted); font-size:11px; margin-top:2px; }
-.others.four{ grid-template-columns:repeat(4,1fr); }
+.others.rituals{ grid-template-columns:repeat(6,1fr); }   /* 研究・交流・休息の3つで1段、小儀式・大儀式の2つで1段 */
+.others.rituals button{ grid-column:span 2; }
+.others.rituals button.ritual{ grid-column:span 3; }
 .others button.ritual{ border-color:#9a5fd0; }
+.others button.ritual.big{ border-color:var(--danger); }
 .plist div.neg{ color:var(--danger); }
 .affpick{ display:inline-flex; gap:6px; flex-wrap:wrap; vertical-align:middle; }
 .affpick .btn{ padding:5px 12px; }
@@ -303,6 +306,26 @@ details summary{ cursor:pointer; color:var(--ink); }
 .chip{ font-size:13px; font-weight:700; padding:1px 9px; border-radius:99px; }
 .chip.up{ color:var(--ok); background:color-mix(in srgb,var(--ok) 14%,transparent); }
 .chip.down{ color:var(--danger); background:color-mix(in srgb,var(--danger) 14%,transparent); }
+/* ---- 禁術の学院：闇の配色（body.theme-forbidden。明暗テーマの切替より優先） ---- */
+body.theme-forbidden{
+  --bg:#1a1025; --panel:#231634; --panel2:#2c1c41; --ink:#eadcf7; --muted:#a893c4; --line:#46305f;
+  --brass:#b97cf0; --brass-soft:#3a2452; --danger:#ff6f7d; --ok:#7fd6a6; --star:#d9a8ff; --shadow:0 0 0 1px rgba(185,124,240,.08), 0 6px 24px rgba(0,0,0,.45);
+  background:radial-gradient(ellipse at 50% -10%, #3a1c52 0%, transparent 55%), radial-gradient(ellipse at 100% 100%, #2a0f22 0%, transparent 50%), var(--bg);
+  background-attachment:fixed;
+}
+body.theme-forbidden h1, body.theme-forbidden .hero h1{ color:#f1e4ff; text-shadow:0 0 18px rgba(185,124,240,.55), 0 0 2px rgba(255,111,125,.4); }
+body.theme-forbidden .panel, body.theme-forbidden .modal, body.theme-forbidden .track{ border-color:var(--line); box-shadow:var(--shadow); }
+body.theme-forbidden button{ color:var(--ink); }
+body.theme-forbidden .btn.main{ color:#1a1025; }
+body.theme-forbidden .lessons button, body.theme-forbidden .others button{ border-color:#4f3670; }
+body.theme-forbidden .lessons button:hover, body.theme-forbidden .others button:hover{ border-color:var(--brass); box-shadow:0 0 10px rgba(185,124,240,.35); }
+body.theme-forbidden .others button.ritual{ border-color:#8a4fd0; background:linear-gradient(180deg, #2c1c41, #1f1030); }
+body.theme-forbidden .others button.ritual.big{ border-color:var(--danger); box-shadow:inset 0 0 12px rgba(255,111,125,.18); }
+body.theme-forbidden .others button.ritual.big:hover{ box-shadow:0 0 14px rgba(255,111,125,.45), inset 0 0 12px rgba(255,111,125,.25); }
+body.theme-forbidden .ero .bar > span{ background:linear-gradient(90deg, #6a2fa8, #b97cf0); box-shadow:0 0 8px rgba(185,124,240,.6); }
+body.theme-forbidden .ero.bad .bar > span{ background:linear-gradient(90deg, #a8203a, #ff6f7d); box-shadow:0 0 10px rgba(255,111,125,.7); }
+body.theme-forbidden .namef input, body.theme-forbidden .namef select{ background:var(--panel2); color:var(--ink); border-color:var(--line); }
+body.theme-forbidden .ov.show{ background:rgba(8,3,14,.72); }
 @media (prefers-reduced-motion: reduce){ *{ animation:none!important; transition:none!important; } }
 </style>
 </head>
@@ -831,36 +854,48 @@ function runawayCheck(s) {
   return [{ title: '暴走', text: `侵食が限界を超え、魔力が暴走した――。\n全能力が大きく下がった。${lines.join('')}\nマイナス特性【${PASSIVES[now].n}】が刻まれ、侵食は${erosionFloor(s)}より下がらなくなった。`, bad: true, big: true, passive: now }];
 }
 // ---- 禁術儀式：侵食と引き換えに、能力・魔法・特性をランダムに得る ----
-// 特別期間（ritualMul）中は、報酬も侵食の増え方も2倍
+// 小儀式（堅実な欲）と大儀式（深淵の誘惑）の2種類。特別期間（ritualMul）中は、どちらも報酬も侵食の増え方も2倍
+const RITUALS = {
+  small: { n: '小儀式', sub: '堅実な欲', fatigue: 8, erosion: [4, 7], failErosion: [2, 4] },
+  big: { n: '大儀式', sub: '深淵の誘惑', fatigue: 15, erosion: [12, 18], failErosion: [6, 9] },
+};
 function ritualMul(s) { const sp = specialOf(s.turn); return sp && sp.ritualMul ? sp.ritualMul : 1; }
-function ritualReward(s) {
-  const r = rnd();
-  if (r < 0.55) {   // 能力
-    const k = pick(STATS); const v = ri(6, 10) * (k === 'hp' ? 3 : 1) * s.grow[k] * growMul(s);
-    const d = gain(s, k, v); return { text: `${STAT_NAME[k]}+${d}` };
-  }
-  if (r < 0.85) {   // 魔法（適性・闇・火が出やすい）
-    const sp = wpick(SPELLS, x => { const h = s.spells.find(y => y.id === x.id); if (h && h.lv >= SPELL_LV_MAX) return 0.0001;
-      return (s.affinity.includes(x.el) ? 3 : x.el === 'dark' || x.el === 'fire' ? 1.5 : 0.6) * (x.rare ? 0.35 : 1); });
-    const a = addSpell(s, sp.id); return { text: a.up ? `魔法【${sp.n}】の理解が深まった（Lv${a.lv}）` : `禁じられた魔法【${sp.n}】を得た`, spell: sp.id };
-  }
+function ritualStat(s, lo, hi) {
+  const k = pick(STATS); const d = gain(s, k, ri(lo, hi) * (k === 'hp' ? 3 : 1) * s.grow[k] * growMul(s));
+  return { text: `${STAT_NAME[k]}+${d}` };
+}
+function ritualSpell(s) {   // 適性・闇・火が出やすい
+  const sp = wpick(SPELLS, x => { const h = s.spells.find(y => y.id === x.id); if (h && h.lv >= SPELL_LV_MAX) return 0.0001;
+    return (s.affinity.includes(x.el) ? 3 : x.el === 'dark' || x.el === 'fire' ? 1.5 : 0.6) * (x.rare ? 0.35 : 1); });
+  const a = addSpell(s, sp.id); return { text: a.up ? `魔法【${sp.n}】の理解が深まった（Lv${a.lv}）` : `禁じられた魔法【${sp.n}】を得た`, spell: sp.id };
+}
+function ritualPassive(s) {
   const cand = COMMON_PASSIVES.filter(p => !has(s, p));
-  if (!cand.length) return ritualReward(s);
+  if (!cand.length) return null;
   const p = pick(cand); addPassive(s, p); return { text: `特性【${PASSIVES[p].n}】が刻まれた`, passive: p };
 }
-function doRitual(s) {
-  const out = { kind: 'ritual', lines: [], events: [] }; const m = ritualMul(s);
-  s.fatigue = clamp(s.fatigue + 12, 0, 100);
+// 1回分の報酬。小儀式：能力80%・魔法20%。大儀式：魔法か特性が確定（魔法60%・特性40%）＋大きな能力上昇×2
+function ritualReward(s, kind) {
+  if (kind === 'big') {
+    const sure = (rnd() < 0.6 ? ritualSpell(s) : ritualPassive(s)) || ritualSpell(s);
+    return [sure, ritualStat(s, 5, 8), ritualStat(s, 5, 8)];
+  }
+  return [rnd() < 0.8 ? ritualStat(s, 4, 7) : ritualSpell(s)];
+}
+function doRitual(s, kind) {
+  const R = RITUALS[kind] || RITUALS.small; const m = ritualMul(s);
+  const out = { kind: 'ritual', lines: [], events: [], ritual: R.n };
+  s.fatigue = clamp(s.fatigue + R.fatigue, 0, 100);
   if (rnd() * 100 < failRate(s)) {
-    const e = addErosion(s, ri(4, 7) * m, 'ritual'); s.cond = Math.max(0, s.cond - 1);
-    out.fail = true; out.lines.push(`禁術儀式に失敗した…（侵食+${e}・調子ダウン）`);
-    out.events.push({ title: '儀式の失敗', text: `術式が崩れ、闇だけが体に残った。侵食+${e}`, bad: true });
+    const e = addErosion(s, ri(R.failErosion[0], R.failErosion[1]) * m, 'ritual'); s.cond = Math.max(0, s.cond - 1);
+    out.fail = true; out.lines.push(`${R.n}に失敗した…（侵食+${e}・調子ダウン）`);
+    out.events.push({ title: `${R.n}の失敗`, text: `術式が崩れ、闇だけが体に残った。侵食+${e}`, bad: true });
     out.events.push(...runawayCheck(s)); return out;
   }
-  const e = addErosion(s, ri(8, 14) * m, 'ritual');
-  const got = []; for (let i = 0; i < m; i++) got.push(ritualReward(s));
-  out.lines.push(`禁術儀式を行った。${got.map(g => g.text).join('・')}（侵食+${e}）`);
-  out.events.push({ title: m > 1 ? '禁術儀式（禁域の月・2倍）' : '禁術儀式', text: `魔法陣が闇色に輝き、力が流れ込んでくる――。\n${got.map(g => g.text).join('\n')}\n侵食+${e}`, spell: (got.find(g => g.spell) || {}).spell, passive: (got.find(g => g.passive) || {}).passive, big: true });
+  const e = addErosion(s, ri(R.erosion[0], R.erosion[1]) * m, 'ritual');
+  const got = []; for (let i = 0; i < m; i++) got.push(...ritualReward(s, kind));
+  out.lines.push(`${R.n}を行った。${got.map(g => g.text).join('・')}（侵食+${e}）`);
+  out.events.push({ title: `${R.n}${m > 1 ? '（禁域の月・2倍）' : ''}`, text: `${kind === 'big' ? '深淵の扉が開き、おびただしい力が流れ込んでくる――。' : '小さな魔法陣が闇色に灯り、力が流れ込んでくる――。'}\n${got.map(g => g.text).join('\n')}\n侵食+${e}`, spell: (got.find(g => g.spell) || {}).spell, passive: (got.find(g => g.passive) || {}).passive, big: kind === 'big' });
   out.events.push(...runawayCheck(s));
   return out;
 }
@@ -2217,12 +2252,13 @@ function setScenario(id) {
   SC = SCENARIOS[id];
   ORIGINS = SC.origins || MAIN_ORIGINS; CHARS = SC.chars || MAIN_CHARS; CHAR_STORY = SC.charStory || MAIN_CHAR_STORY;
   STAR_EVENTS = SC.starEvents || MAIN_STAR_EVENTS; GROUPS = SC.groups || MAIN_GROUPS;
+  if (typeof document !== 'undefined' && document.body) document.body.classList.toggle('theme-forbidden', id === 'forbidden');   // 禁術の学院だけ闇の配色（ブラウザのみ）
   WPM = SC.weeksPerMonth; TOTAL = SC.months * WPM;
   EXAM_WEEK = Object.fromEntries(SC.exams.map(e => [e.key, e.week]));
 }
 setScenario('main');
 
-if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, forbiddenEnding, addErosion, purify, erosionFloor, erosionTier, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
+if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, forbiddenEnding, addErosion, purify, erosionFloor, erosionTier, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
 
 </script>
 <script>
@@ -2368,7 +2404,7 @@ function renderTitle() {
   </div></section>`;
   // 選んだシナリオに切り替えてから生徒を作る（週数・試験・イベントはシナリオが決める）
   $('#go').onclick = () => { const n = $('#nm').value.trim() || 'アルト'; setScenario($('#sc').value); SHOWN = null; S = newStudent(n); TURNLOG = []; renderReveal(); };
-  $('#sc').onchange = () => { $('#scdesc').textContent = SCENARIOS[$('#sc').value].desc || ''; };
+  $('#sc').onchange = () => { $('#scdesc').textContent = SCENARIOS[$('#sc').value].desc || ''; document.body.classList.toggle('theme-forbidden', $('#sc').value === 'forbidden'); };
   $('#nm').onkeydown = e => { if (e.key === 'Enter') $('#go').click(); };
 }
 
@@ -2456,8 +2492,8 @@ function act(fn) {
     if (dropped.length) TURNLOG[0].lines.push({ t: `装備枠が減ったため【${dropped.map(id => SPELL[id].n).join('】【')}】を外した。魔法タブで付け替えられます。`, c: 'bad' });
     render();
     const evs = (r.events || []).map((e, i) => e.choices ? e : ({ ...e, diff: e.diff || (i === 0 ? d : []) }));
-    if (!evs.length && d.length) showToast({ train: isCamp(S.turn) ? '特訓' : '授業', research: '研究', social: '交流', rest: '休息', ritual: '禁術儀式' }[r.kind], d);
-    processEvents(evs, { train: '授業', research: '研究', social: '交流', rest: '休息', ritual: '禁術儀式' }[r.kind], () => {
+    if (!evs.length && d.length) showToast({ train: isCamp(S.turn) ? '特訓' : '授業', research: '研究', social: '交流', rest: '休息', ritual: r.ritual }[r.kind], d);
+    processEvents(evs, { train: '授業', research: '研究', social: '交流', rest: '休息', ritual: r.ritual }[r.kind], () => {
       BUSY = false;
       const ex = examAt(S.turn);
       render();
@@ -2518,11 +2554,11 @@ function render() {
         ${camp ? `<div class="campbar">夏合宿中：授業は「特訓」（成長1.6倍・疲労+28）</div>` : ''}${!camp && specialOf(t) && specialOf(t).note ? `<div class="campbar">${specialOf(t).note}</div>` : ''}
         <h3>${camp ? '特訓' : '授業'}<span class="note" style="font-weight:400">（疲労+${camp ? 28 : 22}）</span></h3>
         <div class="lessons">${STATS.map(k => `<button data-train="${k}">${STAT_NAME[k]}<small>${SUBJECT[k]}</small></button>`).join('')}</div>
-        <div class="others ${SC.ritual ? 'four' : ''}">
+        <div class="others ${SC.ritual ? 'rituals' : ''}">
           <button data-cmd="research">研究<small>${s.research >= 100 ? '次の研究で成果！' : '進捗 ' + s.research + '%'}</small><span class="prog"><span style="width:${Math.min(100, s.research)}%"></span></span></button>
           <button data-cmd="social">交流<small>今週会える：${socialTargets(s).length}人${(() => { const n = socialTargets(s).filter(k => milestoneDue(s, k)).length; return n ? `・✨節目${n}人` : ''; })()}</small></button>
           <button data-cmd="rest">休息<small>疲労回復${specialOf(t) && specialOf(t).restPurify ? '・侵食↓' : ''}</small></button>
-          ${SC.ritual ? `<button data-cmd="ritual" class="ritual">禁術儀式<small>侵食+${Math.round(8 * ritualMul(s))}〜${Math.round(14 * ritualMul(s))}${ritualMul(s) > 1 ? '・報酬2倍' : ''}</small></button>` : ''}
+          ${SC.ritual ? Object.entries(RITUALS).map(([k, R]) => `<button data-cmd="ritual_${k}" class="ritual ${k}">${R.n}<small>${R.sub}・疲労+${R.fatigue}・侵食+${R.erosion[0] * ritualMul(s)}〜${R.erosion[1] * ritualMul(s)}${ritualMul(s) > 1 ? '・報酬2倍' : ''}</small></button>`).join('') : ''}
         </div>
         <div class="risk ${fr >= 20 ? 'hot' : ''}">${fr > 0 ? `授業の失敗率 ${Math.round(fr)}%。休息を検討しましょう。` : '体調は万全。失敗の心配はありません。'}</div>
       </div>
@@ -2538,7 +2574,8 @@ function render() {
   document.querySelectorAll('[data-train]').forEach(b => b.onclick = () => act(() => doTrain(S, b.dataset.train)));
   document.querySelectorAll('[data-cmd]').forEach(b => b.onclick = () => {
     if (b.dataset.cmd === 'social') { chooseSocial(); return; }
-    act(() => ({ research: doResearch, rest: doRest, ritual: doRitual })[b.dataset.cmd](S));
+    const cmd = b.dataset.cmd;
+    act(() => cmd.startsWith('ritual_') ? doRitual(S, cmd.slice(7)) : ({ research: doResearch, rest: doRest })[cmd](S));
   });
   document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { TAB = b.dataset.tab; render(); });
   document.querySelectorAll('[data-eq]').forEach(b => b.onclick = () => toggleEquip(b.dataset.eq));
@@ -2570,7 +2607,7 @@ function tabBody() {
     <div class="tblwrap"><table class="sptbl gtbl" style="min-width:360px"><thead><tr><th>段階</th><th>侵食</th><th>休息の回復</th><th>失敗率</th></tr></thead><tbody>
     ${EROSION_TIERS.map(x => { const on = erosionTier(s) === x; const m = has(s, 'abyss_temper') ? 0.5 : 1; return `<tr class="${on ? 'cur' : ''}"><td>${x.n}${on ? ' ◀いま' : ''}</td><td class="num">${x.min}〜</td><td class="num">-${Math.round(x.rest * m)}</td><td class="num">+${Math.round(x.fail * m)}%</td></tr>`; }).join('')}
     </tbody></table></div>
-    <p class="note">侵食は禁術儀式で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。確実に下げる手段はなく、交流中の出来事・夜の隠れた出来事・禁域の月の休息で下がることがあります。</p>` : ''}
+    <p class="note">侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。確実に下げる手段はなく、交流中の出来事・夜の隠れた出来事・禁域の月の休息で下がることがあります。</p>` : ''}
     <h3 style="margin:18px 0 8px;font-size:15px">習得に挑戦中</h3>
     ${s.pending.length ? `<div class="plist">${s.pending.map(a => `<div>${a.kind === 'passive' ? '特性' : '魔法'}【${a.kind === 'passive' ? PASSIVES[a.id].n : SPELL[a.id].n}】<span>コツLv${a.fails}・現在の成功率${Math.round(attemptRate(s, a) * 100)}%${a.src && CHARS[a.src] ? `・${CHARS[a.src].n}と交流すると再挑戦しやすい` : ''}</span></div>`).join('')}</div>` : '<p class="note">習得に失敗した特性や魔法は、ここに残り、あとで再挑戦できます。失敗するたびに成功しやすくなります。</p>'}
     <h3 style="margin:18px 0 8px;font-size:15px">関係の壁</h3>
