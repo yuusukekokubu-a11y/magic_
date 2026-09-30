@@ -1367,13 +1367,6 @@ function doSocial(s, cid) {
     if (pend.length && rnd() < 0.3) out.events.push(retryEvent(s, pick(pend)));
   }
 
-  if (SC.erosion && s.erosion > erosionFloor(s) && rnd() < 0.15) {   // 交流中の浄化（強制浄化があるので控えめ）
-    const v = ri(8, 14);
-    out.events.push(mkEvent(`${c.n}との静かな時間`, `${c.n}が、あなたの中に巣くう闇に気づいたようだ。\n${c.n}：${pick(c.talk)}`, [
-      { label: '胸の内を打ち明ける', hint: `侵食-${v}前後・${c.n}との絆+2`, fn: s => { const d = purify(s, v); addBond(s, cid, 2); return `言葉にするうちに、闇が少し薄れていった。（侵食-${d}）`; } },
-      { label: '平気なふりをする', hint: '調子↑', fn: s => { s.cond = Math.min(4, s.cond + 1); return '笑ってごまかした。胸の奥の冷たさは、そのままだ。'; } },
-    ], { char: cid }));
-  }
   if (!isQuiet(s) && s.origin === 'noble' && rnd() < 0.08) {
 
     out.events.push(mkEvent('【貴族】サロンへの招待', '名家のサロンから招待状が届いた。', [
@@ -2077,7 +2070,7 @@ function mainExamReward(s, key, won) {
 //  本編の育成の仕組みはそのまま使い、次を足す：
 //    侵食（0〜100）… 禁術儀式などの選択でだけ増える。段階ペナルティと暴走（上の「侵食」の節）
 //    禁術儀式 ……… 新コマンド。侵食と引き換えに能力・魔法・特性をランダムに得る
-//    浄化 ………… 確定の回復手段はなし。交流中のイベントと、ターン開始時の隠し救済イベント（侵食が高いほど起きやすい）、
+//    浄化 ………… 確定の回復手段はなし。ターン開始時の強制浄化（侵食60以上）と隠し救済イベント（侵食が高いほど起きやすい）、
 //                    特別期間「禁域の月」の休息でだけ下がる
 //  人物は盟友候補の3人（闇・火）だけ。主適性は闇か火を入学時に選ぶ。
 // =====================================================================
@@ -2221,7 +2214,8 @@ const FORBIDDEN_STAR_EVENTS = {
   ],
 };
 // 試験の報酬（本編と同じ効果で、文言だけ違う）
-const BARRIER = { min: 60, rate: 0.35, amount: [15, 25] };   // 浄化の強制イベント：侵食がこれ以上で、週あたりの確率、下がる量
+// 浄化の強制イベント：侵食がこれ以上で、週あたりの確率、下がる量。量はわざと幅を極端に広くして、儀式で侵食を調整する計算を成り立たなくしている
+const BARRIER = { min: 60, rate: 0.35, amount: [5, 45] };
 function forbiddenExamReward(s, key, won) {
   const L = [];
   const all = (v) => { for (const k of STATS) gain(s, k, k === 'hp' ? v * 3 : v); };
@@ -2310,7 +2304,7 @@ SCENARIOS.forbidden = {
       c.L.push({ title: `${Math.ceil(c.t / 12)}年目 禁域の月`, kicker: '特別期間', text: '学院の結界が弱まり、禁域の扉が開く4週間が始まった。\nこの間だけ、休息で侵食を鎮められる。禁術儀式は報酬も侵食も2倍になる。' });
     } },
     // 護法印の共鳴：侵食60以上だと、週35%で結界に反応して強制的に浄化される（選択肢なし・回避できない）。高侵食の維持を妨げる
-    barrier: { desc: '浄化の強制イベント（侵食60以上・週35%）', run(s, c) {
+    barrier: { desc: '浄化の強制イベント（侵食60以上・週35%・侵食-5〜45）', run(s, c) {
       if (!s.erosion || s.erosion < BARRIER.min || rnd() >= BARRIER.rate) return;
       const from = s.erosion; const d = purify(s, ri(BARRIER.amount[0], BARRIER.amount[1]));
       if (!d) return;   // 下限（深淵の傷跡）で下がらなかった
@@ -2709,7 +2703,7 @@ function tabBody() {
     <div class="tblwrap"><table class="sptbl gtbl" style="min-width:360px"><thead><tr><th>段階</th><th>侵食</th><th>授業・研究の成長</th><th>休息の回復</th><th>失敗率</th></tr></thead><tbody>
     ${EROSION_TIERS.map(x => { const on = erosionTier(s) === x; const m = has(s, 'abyss_temper') ? 0.5 : 1; return `<tr class="${on ? 'cur' : ''}"><td>${x.n}${on ? ' ◀いま' : ''}</td><td class="num">${x.min}〜</td><td class="num">×${+(EROSION_BASE_GROW * x.grow * (SC.growMul || 1)).toFixed(2)}</td><td class="num">${x.rest ? '-' + Math.round(x.rest * m) : '―'}</td><td class="num">${x.fail ? '+' + Math.round(x.fail * m) + '%' : '―'}</td></tr>`; }).join('')}
     </tbody></table></div>
-    <p class="note">禁術の学院では、能力の伸び全体が本編の${Math.round((SC.growMul || 1) * 100)}%で、授業・研究はさらに70%に抑えられます（表の倍率はこれらを掛けた値）。侵食が高い段階ほど成長バフがかかりますが、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。確実に下げる手段はなく、交流中の出来事・夜の隠れた出来事・禁域の月の休息で下がることがあります。また侵食60以上のあいだは、学院の結界に反応して強制的に浄化されることがあります（週35%・侵食-15〜25）。</p>` : ''}
+    <p class="note">禁術の学院では、能力の伸び全体が本編の${Math.round((SC.growMul || 1) * 100)}%で、授業・研究はさらに70%に抑えられます（表の倍率はこれらを掛けた値）。侵食が高い段階ほど成長バフがかかりますが、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。確実に下げる手段はなく、夜の隠れた出来事・禁域の月の休息で下がることがあります。また侵食60以上のあいだは、学院の結界に反応して強制的に浄化されることがあります（週35%・侵食-5〜45、どれだけ下がるかは読めません）。</p>` : ''}
     <h3 style="margin:18px 0 8px;font-size:15px">習得に挑戦中</h3>
     ${s.pending.length ? `<div class="plist">${s.pending.map(a => `<div>${a.kind === 'passive' ? '特性' : '魔法'}【${a.kind === 'passive' ? PASSIVES[a.id].n : SPELL[a.id].n}】<span>コツLv${a.fails}・現在の成功率${Math.round(attemptRate(s, a) * 100)}%${a.src && CHARS[a.src] ? `・${CHARS[a.src].n}と交流すると再挑戦しやすい` : ''}</span></div>`).join('')}</div>` : '<p class="note">習得に失敗した特性や魔法は、ここに残り、あとで再挑戦できます。失敗するたびに成功しやすくなります。</p>'}
     <h3 style="margin:18px 0 8px;font-size:15px">関係の壁</h3>
