@@ -2073,7 +2073,7 @@ function mainExamReward(s, key, won) {
 //  本編の育成の仕組みはそのまま使い、次を足す：
 //    侵食（0〜100）… 禁術儀式などの選択でだけ増える。段階ペナルティと暴走（上の「侵食」の節）
 //    禁術儀式 ……… 新コマンド。侵食と引き換えに能力・魔法・特性をランダムに得る
-//    浄化 ………… 確定の回復手段はなし。ターン開始時の強制浄化（侵食60以上・下がり幅5〜45）と、
+//    浄化 ………… 確定の回復手段はなし。ターン開始時の強制浄化（週25%・下がり幅5〜45）と、
 //                    特別期間「禁域の月」の休息でだけ下がる
 //  人物は盟友候補の3人（闇・火）だけ。主適性は闇か火を入学時に選ぶ。
 // =====================================================================
@@ -2217,8 +2217,8 @@ const FORBIDDEN_STAR_EVENTS = {
   ],
 };
 // 試験の報酬（本編と同じ効果で、文言だけ違う）
-// 浄化の強制イベント：侵食がこれ以上で、週あたりの確率、下がる量。量はわざと幅を極端に広くして、儀式で侵食を調整する計算を成り立たなくしている
-const BARRIER = { min: 60, rate: 0.35, amount: [5, 45] };
+// 浄化の強制イベント：侵食の高さに関係なく起きる。週あたりの確率、下がる量。量はわざと幅を極端に広くして、儀式で侵食を調整する計算を成り立たなくしている
+const BARRIER = { rate: 0.25, amount: [5, 45] };
 function forbiddenExamReward(s, key, won) {
   const L = [];
   const all = (v) => { for (const k of STATS) gain(s, k, k === 'hp' ? v * 3 : v); };
@@ -2306,9 +2306,9 @@ SCENARIOS.forbidden = {
       if (!sp || sp.id !== 'rite' || weekOf(s.turn) !== 1) return;
       c.L.push({ title: `${Math.ceil(c.t / 12)}年目 禁域の月`, kicker: '特別期間', text: '学院の結界が弱まり、禁域の扉が開く4週間が始まった。\nこの間だけ、休息で侵食を鎮められる。禁術儀式は報酬も侵食も2倍になる。' });
     } },
-    // 護法印の共鳴：侵食60以上だと、週35%で結界に反応して強制的に浄化される（選択肢なし・回避できない）。高侵食の維持を妨げる
-    barrier: { desc: '浄化の強制イベント（侵食60以上・週35%・侵食-5〜45）', run(s, c) {
-      if (!s.erosion || s.erosion < BARRIER.min || rnd() >= BARRIER.rate) return;
+    // 護法印の共鳴：侵食があれば（高さに関係なく）週25%で結界に反応して強制的に浄化される（選択肢なし・回避できない）
+    barrier: { desc: '浄化の強制イベント（侵食の高さに関係なく週25%・侵食-5〜45）', run(s, c) {
+      if (!s.erosion || rnd() >= BARRIER.rate) return;
       const from = s.erosion; const d = purify(s, ri(BARRIER.amount[0], BARRIER.amount[1]));
       if (!d) return;   // 下限（深淵の傷跡）で下がらなかった
       c.L.push({ title: pick(['護法印の共鳴', '巡回審問官の接近']), kicker: '強制イベント', bad: true,
@@ -2698,7 +2698,7 @@ function tabBody() {
     <div class="tblwrap"><table class="sptbl gtbl" style="min-width:360px"><thead><tr><th>段階</th><th>侵食</th><th>授業・研究の成長</th><th>休息の回復</th><th>失敗率</th></tr></thead><tbody>
     ${EROSION_TIERS.map(x => { const on = erosionTier(s) === x; const m = has(s, 'abyss_temper') ? 0.5 : 1; return `<tr class="${on ? 'cur' : ''}"><td>${x.n}${on ? ' ◀いま' : ''}</td><td class="num">${x.min}〜</td><td class="num">×${+(EROSION_BASE_GROW * x.grow * (SC.growMul || 1)).toFixed(2)}</td><td class="num">${x.rest ? '-' + Math.round(x.rest * m) : '―'}</td><td class="num">${x.fail ? '+' + Math.round(x.fail * m) + '%' : '―'}</td></tr>`; }).join('')}
     </tbody></table></div>
-    <p class="note">禁術の学院では、能力の伸び全体が本編の${Math.round((SC.growMul || 1) * 100)}%で、授業・研究はさらに70%に抑えられます（表の倍率はこれらを掛けた値）。侵食が高い段階ほど成長バフがかかりますが、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。侵食が下がるのは、禁域の月の休息だけです。また侵食60以上のあいだは、学院の結界に反応して強制的に浄化されることがあります（週35%・侵食-5〜45、どれだけ下がるかは読めません）。</p>` : ''}
+    <p class="note">禁術の学院では、能力の伸び全体が本編の${Math.round((SC.growMul || 1) * 100)}%で、授業・研究はさらに70%に抑えられます（表の倍率はこれらを掛けた値）。侵食が高い段階ほど成長バフがかかりますが、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。侵食が下がるのは、禁域の月の休息だけです。また学院の結界に反応して、強制的に浄化されることがあります（侵食の高さに関係なく週25%・侵食-5〜45、どれだけ下がるかは読めません）。</p>` : ''}
     <h3 style="margin:18px 0 8px;font-size:15px">習得に挑戦中</h3>
     ${s.pending.length ? `<div class="plist">${s.pending.map(a => `<div>${a.kind === 'passive' ? '特性' : '魔法'}【${a.kind === 'passive' ? PASSIVES[a.id].n : SPELL[a.id].n}】<span>コツLv${a.fails}・現在の成功率${Math.round(attemptRate(s, a) * 100)}%${a.src && CHARS[a.src] ? `・${CHARS[a.src].n}と交流すると再挑戦しやすい` : ''}</span></div>`).join('')}</div>` : '<p class="note">習得に失敗した特性や魔法は、ここに残り、あとで再挑戦できます。失敗するたびに成功しやすくなります。</p>'}
     <h3 style="margin:18px 0 8px;font-size:15px">関係の壁</h3>
