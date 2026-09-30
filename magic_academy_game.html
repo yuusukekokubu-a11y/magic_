@@ -872,9 +872,11 @@ function erosionPenalty(s) {
 // 侵食の下限（マイナス特性で判定。新しい変数は持たない）
 function erosionFloor(s) { return has(s, 'abyss_scar2') ? 40 : has(s, 'abyss_scar') ? 20 : 0; }
 // 侵食を増やす。kind==='ritual' なら儀式の護符が効く。出自の補正（erosionMul）もここで掛ける。戻り値は実際の増加量
+// 侵食の増え方の倍率（出自の erosionMul × 儀式なら儀式の護符 0.6）。画面の予測値もこれを使う
+function getErosionMul(s, isRitual) { return (ORIGINS[s.origin].erosionMul || 1) * (isRitual && has(s, 'rite_ward') ? 0.6 : 1); }
 function addErosion(s, v, kind) {
   if (!SC.erosion || v <= 0) return 0;
-  v *= (ORIGINS[s.origin].erosionMul || 1) * (kind === 'ritual' && has(s, 'rite_ward') ? 0.6 : 1);
+  v *= getErosionMul(s, kind === 'ritual');
   const b = s.erosion; s.erosion = clamp(Math.round(b + v), erosionFloor(s), 100);
   return s.erosion - b;
 }
@@ -1365,7 +1367,7 @@ function doSocial(s, cid) {
     if (pend.length && rnd() < 0.3) out.events.push(retryEvent(s, pick(pend)));
   }
 
-  if (SC.erosion && s.erosion > erosionFloor(s) && rnd() < 0.3) {
+  if (SC.erosion && s.erosion > erosionFloor(s) && rnd() < 0.15) {   // 交流中の浄化（強制浄化があるので控えめ）
     const v = ri(8, 14);
     out.events.push(mkEvent(`${c.n}との静かな時間`, `${c.n}が、あなたの中に巣くう闇に気づいたようだ。\n${c.n}：${pick(c.talk)}`, [
       { label: '胸の内を打ち明ける', hint: `侵食-${v}前後・${c.n}との絆+2`, fn: s => { const d = purify(s, v); addBond(s, cid, 2); return `言葉にするうちに、闇が少し薄れていった。（侵食-${d}）`; } },
@@ -2219,6 +2221,7 @@ const FORBIDDEN_STAR_EVENTS = {
   ],
 };
 // 試験の報酬（本編と同じ効果で、文言だけ違う）
+const BARRIER = { min: 60, rate: 0.35, amount: [15, 25] };   // 浄化の強制イベント：侵食がこれ以上で、週あたりの確率、下がる量
 function forbiddenExamReward(s, key, won) {
   const L = [];
   const all = (v) => { for (const k of STATS) gain(s, k, k === 'hp' ? v * 3 : v); };
@@ -2298,13 +2301,22 @@ SCENARIOS.forbidden = {
   nextEnemyDef(m) { return m <= 12 ? this.opponents.mid.def : m <= 24 ? this.opponents.sel.def : this.opponents.cup2.def; },
   announceWeeks: 4,
   starEventRate: 0.22,
-  turnEventOrder: ['announce', 'riteStart', 'rescue', 'milestones', 'starEvent', 'morning', 'generic', 'retry'],
+  turnEventOrder: ['announce', 'riteStart', 'barrier', 'rescue', 'milestones', 'starEvent', 'morning', 'generic', 'retry'],
   events: {
     announce: SCENARIOS.main.events.announce,
     riteStart: { desc: '禁域の月の始まり', run(s, c) {
       const sp = specialOf(s.turn);
       if (!sp || sp.id !== 'rite' || weekOf(s.turn) !== 1) return;
       c.L.push({ title: `${Math.ceil(c.t / 12)}年目 禁域の月`, kicker: '特別期間', text: '学院の結界が弱まり、禁域の扉が開く4週間が始まった。\nこの間だけ、休息で侵食を鎮められる。禁術儀式は報酬も侵食も2倍になる。' });
+    } },
+    // 護法印の共鳴：侵食60以上だと、週35%で結界に反応して強制的に浄化される（選択肢なし・回避できない）。高侵食の維持を妨げる
+    barrier: { desc: '浄化の強制イベント（侵食60以上・週35%）', run(s, c) {
+      if (!s.erosion || s.erosion < BARRIER.min || rnd() >= BARRIER.rate) return;
+      const from = s.erosion; const d = purify(s, ri(BARRIER.amount[0], BARRIER.amount[1]));
+      if (!d) return;   // 下限（深淵の傷跡）で下がらなかった
+      c.L.push({ title: pick(['護法印の共鳴', '巡回審問官の接近']), kicker: '強制イベント', bad: true,
+        text: `学院に敷かれた浄化の結界が、あなたの中の深い闇に反応した。強制的に魔力が抑え込まれる――。\n侵食-${d}`,
+        diff: [{ k: 'erosion', name: '侵食', from, to: s.erosion, inv: true }] });
     } },
     // 隠し救済：侵食が高いほど起きやすい（予告なし）
     rescue: { desc: '隠し救済イベント（侵食が高いほど起きやすい）', run(s, c) {
@@ -2332,7 +2344,7 @@ function setScenario(id) {
 }
 setScenario('main');
 
-if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, COMMON_SPELLS, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, forbiddenEnding, addErosion, purify, erosionFloor, erosionTier, erosionGrowth, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, activePassives, togglePassive, PASSIVE_SLOTS, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
+if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, COMMON_SPELLS, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, forbiddenEnding, addErosion, getErosionMul, purify, erosionFloor, erosionTier, erosionGrowth, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, activePassives, togglePassive, PASSIVE_SLOTS, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
 
 </script>
 <script>
@@ -2646,7 +2658,7 @@ function render() {
           <button data-cmd="research">研究<small>${s.research >= 100 ? '次の研究で成果！' : '進捗 ' + s.research + '%'}</small><span class="prog"><span style="width:${Math.min(100, s.research)}%"></span></span></button>
           <button data-cmd="social">交流<small>今週会える：${socialTargets(s).length}人${(() => { const n = socialTargets(s).filter(k => milestoneDue(s, k)).length; return n ? `・✨節目${n}人` : ''; })()}</small></button>
           <button data-cmd="rest">休息<small>疲労回復${specialOf(t) && specialOf(t).restPurify ? '・侵食↓' : ''}</small></button>
-          ${SC.ritual ? Object.entries(RITUALS).map(([k, R]) => `<button data-cmd="ritual_${k}" class="ritual ${k}">${R.n}<small>${R.sub}・疲労+${R.fatigue}・侵食+${R.erosion[0] * ritualMul(s)}〜${R.erosion[1] * ritualMul(s)}${ritualMul(s) > 1 ? '・報酬2倍' : ''}</small></button>`).join('') : ''}
+          ${SC.ritual ? Object.entries(RITUALS).map(([k, R]) => `<button data-cmd="ritual_${k}" class="ritual ${k}">${R.n}<small>${R.sub}・疲労+${R.fatigue}・侵食+${Math.round(R.erosion[0] * ritualMul(s) * getErosionMul(s, true))}〜${Math.round(R.erosion[1] * ritualMul(s) * getErosionMul(s, true))}${ritualMul(s) > 1 ? '・報酬2倍' : ''}</small></button>`).join('') : ''}
         </div>
         <div class="risk ${fr >= 20 ? 'hot' : ''}">${fr > 0 ? `授業の失敗率 ${Math.round(fr)}%。休息を検討しましょう。` : '体調は万全。失敗の心配はありません。'}</div>
       </div>
@@ -2697,7 +2709,7 @@ function tabBody() {
     <div class="tblwrap"><table class="sptbl gtbl" style="min-width:360px"><thead><tr><th>段階</th><th>侵食</th><th>授業・研究の成長</th><th>休息の回復</th><th>失敗率</th></tr></thead><tbody>
     ${EROSION_TIERS.map(x => { const on = erosionTier(s) === x; const m = has(s, 'abyss_temper') ? 0.5 : 1; return `<tr class="${on ? 'cur' : ''}"><td>${x.n}${on ? ' ◀いま' : ''}</td><td class="num">${x.min}〜</td><td class="num">×${+(EROSION_BASE_GROW * x.grow * (SC.growMul || 1)).toFixed(2)}</td><td class="num">${x.rest ? '-' + Math.round(x.rest * m) : '―'}</td><td class="num">${x.fail ? '+' + Math.round(x.fail * m) + '%' : '―'}</td></tr>`; }).join('')}
     </tbody></table></div>
-    <p class="note">禁術の学院では、能力の伸び全体が本編の${Math.round((SC.growMul || 1) * 100)}%で、授業・研究はさらに70%に抑えられます（表の倍率はこれらを掛けた値）。侵食が高い段階ほど成長バフがかかりますが、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。確実に下げる手段はなく、交流中の出来事・夜の隠れた出来事・禁域の月の休息で下がることがあります。</p>` : ''}
+    <p class="note">禁術の学院では、能力の伸び全体が本編の${Math.round((SC.growMul || 1) * 100)}%で、授業・研究はさらに70%に抑えられます（表の倍率はこれらを掛けた値）。侵食が高い段階ほど成長バフがかかりますが、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。確実に下げる手段はなく、交流中の出来事・夜の隠れた出来事・禁域の月の休息で下がることがあります。また侵食60以上のあいだは、学院の結界に反応して強制的に浄化されることがあります（週35%・侵食-15〜25）。</p>` : ''}
     <h3 style="margin:18px 0 8px;font-size:15px">習得に挑戦中</h3>
     ${s.pending.length ? `<div class="plist">${s.pending.map(a => `<div>${a.kind === 'passive' ? '特性' : '魔法'}【${a.kind === 'passive' ? PASSIVES[a.id].n : SPELL[a.id].n}】<span>コツLv${a.fails}・現在の成功率${Math.round(attemptRate(s, a) * 100)}%${a.src && CHARS[a.src] ? `・${CHARS[a.src].n}と交流すると再挑戦しやすい` : ''}</span></div>`).join('')}</div>` : '<p class="note">習得に失敗した特性や魔法は、ここに残り、あとで再挑戦できます。失敗するたびに成功しやすくなります。</p>'}
     <h3 style="margin:18px 0 8px;font-size:15px">関係の壁</h3>
