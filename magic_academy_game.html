@@ -94,6 +94,9 @@ button:focus-visible, input:focus-visible{ outline:2px solid var(--brass); outli
 .others button.ritual{ border-color:#9a5fd0; }
 .others button.ritual.big{ border-color:var(--danger); }
 .plist div.neg{ color:var(--danger); }
+.fspell{ color:#a3206f; font-weight:700; text-shadow:0 0 6px rgba(163,32,111,.25); }
+:root[data-theme="dark"] .fspell, body.theme-forbidden .fspell{ color:#ff5cb4; text-shadow:0 0 8px rgba(255,92,180,.45); }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .fspell{ color:#ff5cb4; } }
 .affpick{ display:inline-flex; gap:6px; flex-wrap:wrap; vertical-align:middle; }
 .affpick .btn{ padding:5px 12px; }
 
@@ -444,8 +447,14 @@ const SPELLS = [
   { id: 'd2', el: 'dark', n: '呪詛', ct: 7, t: 'debuff', stat: 'def', val: -0.35, dur: 8 },
   { id: 'd3', el: 'dark', n: 'ドレインタッチ', ct: 5, t: 'dmg', pow: 1.0, lifesteal: 0.5 },
   { id: 'd4', el: 'dark', n: 'アビスゲート', ct: 10, t: 'dmg', pow: 3.6, self: 0.12, crit: 0.3, rare: 1 },
+  // 禁術魔法（forbidden）：禁術の学院の大儀式とヴェインの伝授でだけ手に入る。研究・対戦相手・初期魔法には出ない
+  //   hpCost＝撃つたびに最大HPのその割合を自傷 / initCt＝戦闘開始からそのtick数が過ぎるまで撃てない / pierce＝相手の魔法防御を無視
+  { id: 'x1', el: 'fire', n: '血盟の業火', ct: 3, t: 'dmg', pow: 1.9, hpCost: 0.1, forbidden: 1 },
+  { id: 'x2', el: 'dark', n: '奈落の審判', ct: 9, t: 'dmg', pow: 3.2, initCt: 4, pierce: 1, forbidden: 1 },
+  { id: 'x3', el: 'dark', n: '命喰いの泥', ct: 5, t: 'dmg', pow: 0.8, initCt: 3, lifesteal: 0.5, burn: 0.25, drain: 1, forbidden: 1 },
 ];
 const SPELL = Object.fromEntries(SPELLS.map(s => [s.id, s]));
+const COMMON_SPELLS = SPELLS.filter(x => !x.forbidden);   // 禁術魔法を除いた通常の魔法（研究・対戦相手・初期魔法など）
 const BASIC = { id: 'basic', el: null, n: '魔力弾', ct: 2, t: 'dmg', pow: 0.6 };
 
 function spellDesc(s) {
@@ -459,6 +468,9 @@ function spellDesc(s) {
     if (s.self) p.push(`自傷${s.self * 100}%`);
     if (s.crit) p.push(`会心率+${s.crit * 100}%`);
     if (s.defScale) p.push('自身の魔法防御も威力に加算');
+    if (s.pierce) p.push('魔法防御を無視');
+    if (s.hpCost) p.push(`撃つたびに最大HPの${s.hpCost * 100}%を失う`);
+    if (s.initCt) p.push(`戦闘開始から${s.initCt}tickは撃てない`);
   } else if (s.t === 'heal') p.push(`最大HPの${s.val * 100}%回復（使うたび効果減衰）`);
   else if (s.t === 'shield') p.push('魔法防御に応じたバリア');
   else if (s.t === 'buff') p.push({ regen: `毎tick最大HPの${s.val * 100}%回復`, def: `魔法防御+${s.val * 100}%`, atk: `魔法攻撃+${s.val * 100}%` }[s.stat] + `（${s.dur}tick）`);
@@ -541,7 +553,7 @@ const PASSIVES = {
   orphan_soul: { n: '逆境の魂', d: 'HP50%以下で与ダメ+25%・被ダメ-15%', u: 1 },
   heir_blood: { n: '大魔導の血', d: '全魔法の威力+12%', u: 1 },
   // 禁術の学院：盟友候補の特性と、暴走で刻まれるマイナス特性（neg）
-  abyss_fury: { n: '深淵の昂り', d: '侵食が高いほど与ダメージ上昇（侵食100で+30%）' },
+  abyss_fury: { n: '深淵の昂り', d: '残りHPが低いほど与ダメージ上昇（最大+30%）。自傷する魔法と相性がいい' },
   abyss_temper: { n: '闇への耐性', d: '侵食による段階ペナルティを半減' },
   rite_ward: { n: '儀式の護符', d: '禁術儀式での侵食の上昇-40%' },
   abyss_scar: { n: '深淵の傷跡', d: '侵食の下限が20になる（浄化してもこれ以下に下がらない）', neg: 1 },
@@ -757,16 +769,16 @@ function newStudent(name, forceOrigin) {
   s.affinity = [pick(SC.affinityPool || ELEMS)];
   if (oid === 'heir') { let e2; do e2 = pick(ELEMS); while (e2 === s.affinity[0]); s.affinity.push(e2); }
   // 初期魔法: 適性属性の基本魔法1つ（貴族は2つ）
-  const firstPool = SPELLS.filter(x => s.affinity.includes(x.el) && !x.rare && x.t === 'dmg');
+  const firstPool = COMMON_SPELLS.filter(x => s.affinity.includes(x.el) && !x.rare && x.t === 'dmg');
   addSpell(s, pick(firstPool).id);
-  if (oid === 'noble') addSpell(s, pick(SPELLS.filter(x => !x.rare && !s.spells.find(y => y.id === x.id))).id);
+  if (oid === 'noble') addSpell(s, pick(COMMON_SPELLS.filter(x => !x.rare && !s.spells.find(y => y.id === x.id))).id);
   if (SC.erosion) s.erosion = o.erosion || 0;   // 侵食（禁術の学院のみ）
   return s;
 }
 // 主適性を選び直す（適性を選べるシナリオの入学時）。初期魔法も新しい適性のものに替える
 function chooseAffinity(s, el) {
   s.affinity = [el]; s.spells = []; s.equip = [];
-  addSpell(s, pick(SPELLS.filter(x => x.el === el && !x.rare && x.t === 'dmg')).id);
+  addSpell(s, pick(COMMON_SPELLS.filter(x => x.el === el && !x.rare && x.t === 'dmg')).id);
 }
 
 function slots(s) { return clamp(2 + Math.floor(s.stats.int / 40), 2, 7); }
@@ -864,9 +876,9 @@ function ritualStat(s, lo, hi) {
   const k = pick(STATS); const d = gain(s, k, ri(lo, hi) * (k === 'hp' ? 3 : 1) * s.grow[k] * growMul(s));
   return { text: `${STAT_NAME[k]}+${d}` };
 }
-function ritualSpell(s) {   // 適性・闇・火が出やすい
-  const sp = wpick(SPELLS, x => { const h = s.spells.find(y => y.id === x.id); if (h && h.lv >= SPELL_LV_MAX) return 0.0001;
-    return (s.affinity.includes(x.el) ? 3 : x.el === 'dark' || x.el === 'fire' ? 1.5 : 0.6) * (x.rare ? 0.35 : 1); });
+function ritualSpell(s, withForbidden) {   // 適性・闇・火が出やすい。大儀式（withForbidden）では禁術魔法も出る
+  const sp = wpick(withForbidden ? SPELLS : COMMON_SPELLS, x => { const h = s.spells.find(y => y.id === x.id); if (h && h.lv >= SPELL_LV_MAX) return 0.0001;
+    return x.forbidden ? 1.2 : (s.affinity.includes(x.el) ? 3 : x.el === 'dark' || x.el === 'fire' ? 1.5 : 0.6) * (x.rare ? 0.35 : 1); });
   const a = addSpell(s, sp.id); return { text: a.up ? `魔法【${sp.n}】の理解が深まった（Lv${a.lv}）` : `禁じられた魔法【${sp.n}】を得た`, spell: sp.id };
 }
 function ritualPassive(s) {
@@ -877,7 +889,7 @@ function ritualPassive(s) {
 // 1回分の報酬。小儀式：能力80%・魔法20%。大儀式：魔法か特性が確定（魔法60%・特性40%）＋大きな能力上昇×2
 function ritualReward(s, kind) {
   if (kind === 'big') {
-    const sure = (rnd() < 0.6 ? ritualSpell(s) : ritualPassive(s)) || ritualSpell(s);
+    const sure = (rnd() < 0.6 ? ritualSpell(s, true) : ritualPassive(s)) || ritualSpell(s, true);
     return [sure, ritualStat(s, 5, 8), ritualStat(s, 5, 8)];
   }
   return [rnd() < 0.8 ? ritualStat(s, 4, 7) : ritualSpell(s)];
@@ -1001,7 +1013,7 @@ function doTrain(s, stat) {
 // ---- 研究：3つの候補から1つを選ぶ ----
 function researchOffer(s) {
   const rareW = (has(s, 'scholar') ? 0.9 : 0.35) + (s.origin === 'heir' ? 0.3 : 0) + s.stats.int / 600;
-  const pool = [...SPELLS]; const out = [];
+  const pool = [...COMMON_SPELLS]; const out = [];
   while (out.length < 3 && pool.length) {
     const sp = wpick(pool, x => { const h = s.spells.find(y => y.id === x.id); if (h && h.lv >= 5) return 0.0001; const r = affRole(affOf(s), x.el); return (r === 'main' || r === 'pure' ? AFF.research.main : r === 'sub' ? AFF.research.sub : 1) * (x.rare ? rareW : 1) * (h ? 0.7 : 1); });
     out.push(sp.id); pool.splice(pool.indexOf(sp), 1);
@@ -1189,14 +1201,14 @@ function bondNext(s, cid) {
   const li = lockInfo(s, cid);
   if (li) return `🔒 ${STAT_NAME[li.stat]}が${li.need}になると関係が深まる（いま${li.cur}）`;
   const f = s.flags;
-  const label = { 20: `物語「${CHAR_STORY[cid].s20.title}」`, 40: `特性【${PASSIVES[c.p40].n}】に挑戦`, 60: `物語「${CHAR_STORY[cid].s60.title}」`, 80: `秘伝魔法【${SPELLS.find(x => x.el === c.el && x.rare).n}】に挑戦` };
+  const label = { 20: `物語「${CHAR_STORY[cid].s20.title}」`, 40: `特性【${PASSIVES[c.p40].n}】に挑戦`, 60: `物語「${CHAR_STORY[cid].s60.title}」`, 80: `秘伝魔法【${COMMON_SPELLS.find(x => x.el === c.el && x.rare).n}】に挑戦` };
   const due = milestoneDue(s, cid);   // 節目に届いていて、交流すれば起きる出来事
   if (due && label[due]) return `✨ 絆${due}：${label[due]}（交流で発生）`;
   if (b < 20) return `絆20：${label[20]}`;
   if (!f['b40' + cid]) return `絆40：${label[40]}`;
   if (b < 60) return `絆60：${label[60]}`;
   if (!f['b80' + cid]) return `絆80：${label[80]}`;
-  if (!star) return b < 100 ? `絆100：餞別（特性【${PASSIVES[c.seal].n}】）` : '絆は最大';
+  if (!star) return b < 100 ? (c.giftSpell ? `絆100：禁術魔法【${SPELL[c.giftSpell].n}】の伝授` : `絆100：餞別（特性【${PASSIVES[c.seal].n}】）`) : '絆は最大';
   if (b < 100) return s.partner ? '絆100：かけがえのない友' : '絆100：盟友の誓い';
   if (!s.partner) return '盟友の誓いを立てられる';
   return '絆は最大';
@@ -1237,7 +1249,7 @@ function milestoneEvents(s, cid, fromSocial) {
   if (b >= 80 && !f['b80' + cid] && !statReady(s, cid, 80)) out.push(...lockNotice(s, cid, 80));
   else if (b >= 80 && !f['b80' + cid]) {
     f['b80' + cid] = 1;
-    const rs = SPELLS.find(x => x.el === c.el && x.rare);
+    const rs = COMMON_SPELLS.find(x => x.el === c.el && x.rare);
     const att = { kind: 'spell', id: rs.id, base: 0.5, src: cid, retryText: `${c.n}：${c.retry}` };
     out.push(mkEvent(`${c.n}の秘伝`, `${c.n}：${c.secret}`, [
       attemptChoice(att, '秘伝の修行を受ける', '疲労+10', s => { s.fatigue = clamp(s.fatigue + 10, 0, 100); }),
@@ -1248,7 +1260,15 @@ function milestoneEvents(s, cid, fromSocial) {
   //        イベント → 餞別（固有の特性＋全ステータス＋得意ステータス）
   if (b >= 100 && !f['b100' + cid]) {
     const st = CHAR_STORY[cid];
-    if (c.group === 'event') {
+    if (c.group === 'event' && c.giftSpell) {   // 餞別の代わりに、禁術魔法を確実に伝授する（禁術の学院のヴェイン）
+      const gs = SPELL[c.giftSpell];
+      out.push(mkEvent(`${c.n}：禁術の伝授`, `${c.n}との絆が最大になった。\n${st.gift}`, [
+        { label: '伝授を受ける', hint: `禁術魔法【${gs.n}】を確実に習得：${spellDesc(gs)}`, fn: s => {
+          f['b100' + cid] = 1; const r = addSpell(s, c.giftSpell);
+          return { text: `${c.n}から、禁術魔法【${gs.n}】を${r.up ? `さらに深く学んだ（Lv${r.lv}）` : '授かった'}。`, spell: c.giftSpell, big: true };
+        } },
+      ], { char: cid, big: true }));
+    } else if (c.group === 'event') {
       const sp = PASSIVES[c.seal];
       out.push(mkEvent(`${c.n}からの餞別`, `${c.n}との絆が最大になった。\n${c.n}：${c.farewell}`, [
         { label: 'ありがたく受け取る', hint: `特性【${sp.n}】：${sp.d}・全ステータス+5・${statHint(c.stat, 10)}`, fn: s => {
@@ -1291,7 +1311,8 @@ function doSocial(s, cid) {
   // 交流で上がる絆は控えめ（絆の主な伸びは五星とのランダムイベント）。イベントの人物は交流が主な手段なので多め
   const bFrom = s.bonds[cid];
   addBond(s, cid, c.group === 'event' ? ri(4, 6) : ri(3, 4));
-  const g = {}; g[c.stat] = gain(s, c.stat, (0.8 + rnd() * 0.6) * (c.stat === 'hp' ? 3 : 1) * s.grow[c.stat] * growMul(s) * (c.group === 'event' ? EVENT_GAIN : 1));
+  const gm = c.gainMul || (c.group === 'event' ? EVENT_GAIN : 1);   // gainMul＝その人物だけの伸び倍率（ヴェインなど）
+  const g = {}; for (const k of [c.stat, c.also].filter(Boolean)) g[k] = gain(s, k, (0.8 + rnd() * 0.6) * (k === 'hp' ? 3 : 1) * s.grow[k] * growMul(s) * gm);
   const place = pick(c.where); const line = pick(c.talk);
   out.lines.push(`${place}で${c.n}（${c.role}）と過ごした。${c.n}：${line} ${fmtGain(g)}（絆 ${bFrom}→${s.bonds[cid]}）`);
   // 交流そのものを毎回ポップアップで見せる（ステータス変化はUI側で行動全体の差分を添付）
@@ -1475,7 +1496,7 @@ function charEvents(s) {
       { label: '徹夜で手伝う', hint: '精度+6・知力+4・セリアとの絆+10・疲労+14', fn: s => { gain(s, 'acc', 6); gain(s, 'int', 4); addBond(s, 'celia', 10); fat(s, 14); return '飾り付けの魔法を何百回も唱えた。\nセリア先輩：「本当に助かったわ。この恩は忘れないわね」'; } },
       { label: '用事があると断る', hint: '疲労-5', fn: s => { fat(s, -5); return 'セリア先輩：「そう……無理を言ってごめんなさいね」\n申し訳なく思いつつ、早めに休んだ。'; } },
     ]),
-    ord: () => { const rs = pick(SPELLS.filter(x => x.rare && !(s.spells.find(y => y.id === x.id)))); if (!rs) return null;
+    ord: () => { const rs = pick(COMMON_SPELLS.filter(x => x.rare && !(s.spells.find(y => y.id === x.id)))); if (!rs) return null;
       const att = { kind: 'spell', id: rs.id, base: 0.45, src: 'ord', retryText: '禁書の内容が夢に出てきた。もう一度読み解けるかもしれない。', okText: 'オルド先生：「……ふぉっふぉ。見なかったことにしておいてやろう」' };
       return mkEvent('オルド先生：禁書庫の鍵', '研究室の机に、禁書庫の鍵が置きっぱなしになっている…。', [
         attemptChoice(att, 'こっそり忍び込んで読む', '疲労+10', s => fat(s, 10)),
@@ -1485,7 +1506,7 @@ function charEvents(s) {
       { label: '参加する', hint: '魔法防御+10・体力+18・ガルドとの絆+12・疲労+14', fn: s => { gain(s, 'def', 10); gain(s, 'hp', 18); addBond(s, 'garde', 12); fat(s, 14); return 'ひたすら攻撃魔法を受け止める稽古をした。\nガルド：「……筋がいい。……また来い」'; } },
       { label: '見学だけする', hint: '精度+5', fn: s => { gain(s, 'acc', 5); return '部員たちの魔法の軌道を観察した。'; } },
     ]),
-    luka: () => { if (!isUnlocked(s, 'luka')) return null; const sp = pick(SPELLS.filter(x => !x.rare && !(s.spells.find(y => y.id === x.id)))); if (!sp) return null;
+    luka: () => { if (!isUnlocked(s, 'luka')) return null; const sp = pick(COMMON_SPELLS.filter(x => !x.rare && !(s.spells.find(y => y.id === x.id)))); if (!sp) return null;
       const att = { kind: 'spell', id: sp.id, base: 0.55, src: 'luka', retryText: 'ルカ：「センパイ、この前の魔導書、続きの巻が手に入ったんだよね♪」', okText: 'ルカ：「ほらね、ボクの目利きは確かでしょ、センパイ？」' };
       return mkEvent('ルカ：怪しい露店', 'ルカがにやりと笑う。\nルカ：「センパイ、掘り出し物の魔導書、今なら特別価格さ♪ ボクを信じてみる？」', [
         attemptChoice(att, '魔導書を買って読む'),
@@ -1577,7 +1598,7 @@ const EVENTS = {
     const { L, t, f, fat, cond } = c;
   if (s.origin === 'heir' && !f.book && t === 3) {
     f.book = 1;
-    const opts = s.affinity.map(e => SPELLS.find(x => x.el === e && x.rare));
+    const opts = s.affinity.map(e => COMMON_SPELLS.find(x => x.el === e && x.rare));
     L.push(mkEvent('【大魔法使いの子】父の魔導書', '父の遺した魔導書。読み解けるのは、どちらか一章だけだ。', [
       ...opts.map(rs => ({ label: `【${rs.n}】の章を読む`, hint: `${ELEM[rs.el].n}のレア魔法：${spellDesc(rs)}（確実）`, fn: s => { addSpell(s, rs.id); return { text: `秘術【${rs.n}】を読み解いた！`, spell: rs.id, big: true }; } })),
       { label: '表紙を閉じ、自分の力で学ぶ', hint: '知力+15・全ステータスの成長+5%', fn: s => { gain(s, 'int', 15); for (const k of STATS) s.grow[k] *= 1.05; return '父の影ではなく、自分の道を歩むと決めた。'; } },
@@ -1603,7 +1624,7 @@ const EVENTS = {
   if (rnd() < wk(0.15)) {
     const ev = pick(['book', 'cold', 'bread', 'beast', 'night']);
     if (ev === 'book') {
-      const two = SPELLS.filter(x => !x.rare).sort(() => rnd() - 0.5).slice(0, 2);
+      const two = COMMON_SPELLS.filter(x => !x.rare).sort(() => rnd() - 0.5).slice(0, 2);
       L.push(mkEvent('図書館の古書', '書架の奥で、埃をかぶった魔導書を見つけた。', [
         ...two.map(sp => attemptChoice({ kind: 'spell', id: sp.id, base: 0.65, src: 'ord', retryText: '図書館で、あの古書の続きを見つけた。' }, `【${sp.n}】のページを読む`)),
         { label: 'オルド先生に届ける', hint: '知力+6・オルド先生との絆+8（確実）', fn: s => { gain(s, 'int', 6); addBond(s, 'ord', 8); return '「ほう、よく見つけたな」と感心された。'; } },
@@ -1662,7 +1683,7 @@ function spellStats(s, entry, enemyDef) {
   if (sp.t === 'dmg') {
     let atk = s.stats.atk * (P('seal_celia') ? 1.1 : 1) * sp.pow * potMul + (sp.defScale ? def * sp.defScale : 0);
     if (syn.includes('fire')) atk *= 1.10;
-    r.hit = Math.round(atk * 100 / (100 + enemyDef));
+    r.hit = Math.round(atk * (sp.pierce ? 1 : 100 / (100 + enemyDef)));
     r.hits = sp.hits || 1;
     r.total = r.hit * r.hits + (sp.burn ? Math.round(s.stats.atk * sp.burn * 100 / (100 + enemyDef)) * 4 : 0);
     r.perTick = +(r.total / ct).toFixed(1);
@@ -1699,7 +1720,7 @@ function makeFighter(name, stats, spells, equip, passives, el, aff) {
   const slotsArr = [...eqSp, BASIC].map(sp => {
     const lvMul = spellLvMul(sp.lv || 1);
     const ct = Math.max(1, Math.round((sp.ct - ((sp.lv || 1) >= 3 ? 1 : 0)) * (1 - ctRed)));
-    return { sp, lvMul, ct, cd: Math.ceil(ct / 2) };
+    return { sp, lvMul, ct, cd: sp.initCt != null ? sp.initCt + 1 : Math.ceil(ct / 2) };   // initCt：その tick 数が過ぎてから撃てる（cd は各手番の最初に1減る）
   });
   const mhp = Math.round(stats.hp * (P('bulwark') ? 1.15 : 1) * (P('seal_garde') ? 1.1 : 1));
   return { name, el, aff, base: { ...stats }, maxHp: mhp, hp: mhp, shield: 0, slots: slotsArr, syn, passives,
@@ -1789,10 +1810,10 @@ function cast(me, op, slot, t, push) {
       if (me.P('adversity') && me.hp < me.maxHp * 0.3) atk *= 1.35;
       if (me.P('orphan_soul') && me.hp < me.maxHp * 0.5) atk *= 1.25;
       if (me.P('finisher') && op.hp < op.maxHp * 0.3) atk *= 1.2;
-      if (me.P('abyss_fury')) atk *= 1 + 0.3 * (me.erosion || 0) / 100;
+      if (me.P('abyss_fury')) atk *= 1 + 0.3 * (1 - Math.max(0, me.hp) / me.maxHp);   // 背水：残りHPが減るほど強くなる
       const critR = 0.05 + eff(me, 'acc') / 2000 + (sp.crit || 0) + (me.syn.includes('dark') ? 0.1 : 0) + (me.P('sniper') ? 0.1 : 0) + (me.P('noir_bless') ? 0.08 : 0) + (me.P('seal_luka') ? 0.05 : 0) + (me.P('blaze_heart') ? 0.05 : 0);
       if (rnd() < critR) { atk *= 1.8; crits++; }
-      let dmg = atk * (100 / (100 + eff(op, 'def'))) * matchMul(sp.el, op);
+      let dmg = atk * (sp.pierce ? 1 : 100 / (100 + eff(op, 'def'))) * matchMul(sp.el, op);
       if (op.P('wall')) dmg *= 0.9;
       if (op.P('noble_blood')) dmg *= 0.92;
       if (op.P('noir_bless')) dmg *= 0.95;
@@ -1812,6 +1833,7 @@ function cast(me, op, slot, t, push) {
     if (hitN && sp.delay) { const d = sp.delay; op.slots.forEach(s => s.cd += d); push(E({ text: `${op.name}の詠唱が乱れた（CT+${d}）`, kind: 'debuff' })); }
     if (hitN && sp.lifesteal) { const h = Math.round(total * sp.lifesteal); me.hp = Math.min(me.maxHp, me.hp + h); push(E({ text: `${me.name}はHPを${h}吸収`, kind: 'heal', drain: h, sid2: sp.id })); }
     if (sp.self) { const d = Math.round(me.maxHp * sp.self); me.hp = Math.max(1, me.hp - d); push(E({ text: `${me.name}は反動で${d}ダメージ`, kind: 'dot' })); }
+    if (sp.hpCost) { const d = Math.round(me.maxHp * sp.hpCost); me.hp = Math.max(1, me.hp - d); push(E({ text: `${me.name}は血を代償に${d}ダメージ`, kind: 'dot' })); }
   } else if (sp.t === 'heal') {
     let h = me.maxHp * sp.val * potMul * Math.pow(0.8, me.healCount) + me.base.int * 0.4;
     if (me.syn.includes('light')) h *= 1.3; h = Math.round(h); me.healCount++;
@@ -1840,8 +1862,8 @@ function makeOpponent(key, over) {
   const jit = () => 0.94 + rnd() * 0.12;
   const st = { hp: Math.round(b.hp * jit()), atk: Math.round(b.atk * jit()), int: Math.round(b.int * jit()), def: Math.round(b.def * jit()), acc: Math.round(b.acc * jit()) };
   // 属性ビルド: メイン属性3 + サブ
-  const main = SPELLS.filter(x => x.el === el && (b.rare || !x.rare));
-  const sub = SPELLS.filter(x => x.el !== el && !x.rare);
+  const main = COMMON_SPELLS.filter(x => x.el === el && (b.rare || !x.rare));
+  const sub = COMMON_SPELLS.filter(x => x.el !== el && !x.rare);
   let chosen = [...main].sort(() => rnd() - 0.5).slice(0, Math.min(3 + (b.rare > 1 ? 1 : 0), main.length));
   while (chosen.length < b.n) { const c = pick(sub); if (!chosen.includes(c)) chosen.push(c); }
   chosen.sort((x, y) => (y.t === 'dmg' ? y.pow * (y.hits || 1) : 0.5) / y.ct - (x.t === 'dmg' ? x.pow * (x.hits || 1) : 0.5) / x.ct);
@@ -1851,7 +1873,6 @@ function makeOpponent(key, over) {
 // key を渡すと、そのラウンドがパートナーの声援の対象か判定する（シナリオの partnerCheer）
 function playerFighter(s, key) {
   const f = makeFighter(s.name, s.stats, s.spells, s.equip, s.passives, s.affinity[0], affOf(s));
-  f.erosion = s.erosion || 0;
   const pc = SC.partnerCheer;
   if (s.partner && key && pc && pc.rounds.includes(key)) {
     f.buffs.push({ stat: 'atk', val: pc.atk, dur: 9999, src: 'cheer' });
@@ -2021,8 +2042,6 @@ function mainExamReward(s, key, won) {
 //                    特別期間「禁域の月」の休息でだけ下がる
 //  人物は盟友候補の3人（闇・火）だけ。主適性は闇か火を入学時に選ぶ。
 // =====================================================================
-// 対戦相手の能力値をまとめて倍率調整する
-function scaleOpp(o, f) { const r = { ...o }; for (const k of STATS) r[k] = Math.round(o[k] * f); return r; }
 const FORBIDDEN_ORIGINS = {
   wanderer: { n: '流れ者', p: 45, init: { hp: 160, atk: 30, int: 30, def: 30, acc: 30 },
     grow: { hp: 1.06, atk: 1.06, int: 1.06, def: 1.06, acc: 1.06 }, desc: '身ひとつで学院の門を叩いた者。偏りのない標準型。' },
@@ -2035,7 +2054,7 @@ const FORBIDDEN_ORIGINS = {
 };
 const FORBIDDEN_GROUPS = {
   star: { n: '禁術の同志', d: '盟友候補' },
-  event: { n: 'その他', d: '' },
+  event: { n: '異端の教師', d: '盟友にはなれないが、交流でよく伸びる' },
 };
 const FORBIDDEN_CHARS = {
   kain: { group: 'star', kind: '同級生', busy: { week: 2, reason: '地下闘技場で賭け試合に出ている' }, absent: ['「野暮用だ」とだけ言って姿を消した', '廃聖堂でひとり剣を振っている'],
@@ -2059,6 +2078,14 @@ const FORBIDDEN_CHARS = {
     b80: '「あなたとなら、どんな深淵の底でも、踊れる気がするの」',
     secret: '「月の儀式の奥義よ。……払う代償は、あたしが半分持ってあげる」',
     retry: '「この前の続き、やってみる？ 今夜は月がきれいだから、きっとうまくいくわ」' },
+  // ---------- 異端の教師（救済役）：交流で魔法攻撃と体力が大きく伸びる。絆100で禁術魔法【奈落の審判】を伝授 ----------
+  vain: { group: 'event', kind: '先生', busy: { week: 1, reason: '審問会に呼び出されている（本人いわく「茶番」）' }, absent: ['「実地調査」と称して学院の外に出ている', '研究室に鍵をかけてこもっている'],
+    where: ['地下の実技演習場', '異端学の研究室', '焼け落ちた旧講堂', '学院の墓所'], n: 'ヴェイン', sex: '男', first: '私', tone: '異端の教師。冷徹で皮肉屋だが、実戦で生き残る術を容赦なく叩き込む。語尾は「〜だ」「〜したまえ」', role: '異端の教師', el: 'dark', stat: 'atk', also: 'hp', gainMul: 2.2, p40: 'finisher', giftSpell: 'x2',
+    talk: ['「理屈はいい。立って、撃て。死ななければ覚える」', '「討伐隊は君の事情など聞かない。聞くのは悲鳴だけだ」', '「……ふん。昨日よりは、ましな顔になったな」', '「倒れるなら前に倒れたまえ。後ろに倒れる者から死ぬ」'],
+    b40: '「一つだけ教えてやろう。弱った相手を仕留め損ねるな。情けは次の死体を増やすだけだ」',
+    secret: '「アビスゲート。私が異端と呼ばれた理由の一つだ。……扱いを誤れば、君が呑まれる」',
+    retry: '「前回の続きだ。今度は最後まで立っていたまえ」',
+    farewell: '「私が教えることは、もう何もない」' },
 };
 const FORBIDDEN_CHAR_STORY = {
   kain: {
@@ -2100,6 +2127,15 @@ const FORBIDDEN_CHAR_STORY = {
     ending: 'リリス：「あなたの闇も光も、ぜんぶ半分こ。……それが、あたしたちの契約よ」',
     final: 'リリス：「……ごめんなさいね。これも、儀式なの」',
   },
+};
+FORBIDDEN_CHAR_STORY.vain = {
+  s20: { title: '異端の教師', text: '地下演習場で、ヴェインが焼け焦げた訓練人形を片づけていた。\nヴェイン：「……見ていたのか。これは、去年の教え子たちの名前を刻んだ人形だ。討伐隊に殺された」', choices: [
+    { label: 'だから、厳しいんですね', fx: { cond: 1, bond: 5 }, res: 'ヴェイン：「……勘違いするな。死なれると、教えた時間が無駄になる。それだけだ」' },
+    { label: '稽古をつけてください', fx: { atk: 4, hp: 12, fatigue: 10, bond: 4 }, res: 'ヴェイン：「いい返事だ。……立てなくなるまでやるぞ」' }] },
+  s60: { title: '審問会の呼び出し', text: 'ヴェインが審問会から戻ると、左腕に拘束の刻印が増えていた。\nヴェイン：「異端の教師は、生徒を守った回数だけ罰を受ける。……安い代償だ」', choices: [
+    { label: '代償の分まで、強くなります', fx: { atk: 6, hp: 18, fatigue: 12, bond: 7 }, res: 'ヴェイン：「……ふん。言ったからには、証明してもらう」' },
+    { label: '刻印を解く方法を探します', fx: { int: 4, research: 15, bond: 6 }, res: 'ヴェイン：「余計な世話だ。……だが、その知識は君の役に立つだろう」' }] },
+  gift: 'ヴェイン：「……いいだろう。私が異端と呼ばれた本当の理由を、君に渡す。奈落の審判――守りの上から相手を裁く禁術だ。代わりに、生き延びろ。それが私への唯一の礼だ」',
 };
 const FORBIDDEN_STAR_EVENTS = {
   kain: [
@@ -2200,13 +2236,13 @@ SCENARIOS.forbidden = {
   summary(s) { const reach = s.results.champion ? '防衛成功' : this.reachName[s.results.cupReached]; return `実戦演習 ${s.results.mid ? '突破' : '敗北'}／審問官迎撃 ${s.results.sel ? '撃退' : '敗北'}／防衛戦 ${reach}`; },
   // 各年の8月は「禁域の月」：休息で侵食が下がり、禁術儀式は報酬も侵食も2倍
   special(t) { return (monthIdx(t) - 1) % 12 === 4 ? { id: 'rite', name: '禁域の月', ritualMul: 2, restPurify: [10, 16], note: '禁域の月：休息で侵食が下がる・禁術儀式は報酬も侵食も2倍' } : null; },
-  // 対戦相手：本編の能力×0.85（夏合宿・イベント人物がいない分を補正。禁術儀式を使うと本編より楽になる程度）。審問官・討伐隊は光が多い
+  // 対戦相手：能力は本編と同じ（据え置き）。夏合宿がない分は、異端の教師ヴェインと禁術儀式で補う。審問官・討伐隊は光が多い
   opponents: {
-    mid: { ...scaleOpp(SCENARIOS.main.opponents.mid, 0.85) },
-    sel: { ...scaleOpp(SCENARIOS.main.opponents.sel, 0.85), els: ['light', 'water'] },
-    cup1: { ...scaleOpp(SCENARIOS.main.opponents.cup1, 0.85), els: ['light', 'wood'] },
-    cup2: { ...scaleOpp(SCENARIOS.main.opponents.cup2, 0.85), els: ['light', 'water'] },
-    final: { ...scaleOpp(SCENARIOS.main.opponents.final, 0.85), el: 'light', passives: ['focus', 'guts'] },
+    mid: { ...SCENARIOS.main.opponents.mid },
+    sel: { ...SCENARIOS.main.opponents.sel, els: ['light', 'water'] },
+    cup1: { ...SCENARIOS.main.opponents.cup1, els: ['light', 'wood'] },
+    cup2: { ...SCENARIOS.main.opponents.cup2, els: ['light', 'water'] },
+    final: { ...SCENARIOS.main.opponents.final, el: 'light', passives: ['focus', 'guts'] },
   },
   oppNames: {
     mid: ['演習相手 ドミニク', '演習相手 ノエル', '演習相手 ギデオン', '演習相手 マルタ'],
@@ -2215,7 +2251,7 @@ SCENARIOS.forbidden = {
     cup2: ['本隊副長 ベルトラン', '本隊副長 アデリナ'],
     final: ['討伐隊長 ガブリエル', '聖騎士団長 セラフィナ'],
   },
-  availability: { rate: 0.2, partnerRate: 0.1, minPresent: 2, special: { rite: ['kain', 'vesper', 'lilith'] } },
+  availability: { rate: 0.2, partnerRate: 0.1, minPresent: 2, special: { rite: ['kain', 'vesper', 'lilith', 'vain'] } },
   quietWeeks: 1,
   partnerCheer: { rounds: ['cup1', 'cup2', 'final'], atk: 0.08 },
   finalFromStars: false,                                  // 最終戦の相手は討伐隊長（人物からは選ばない）
@@ -2258,7 +2294,7 @@ function setScenario(id) {
 }
 setScenario('main');
 
-if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, forbiddenEnding, addErosion, purify, erosionFloor, erosionTier, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
+if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, COMMON_SPELLS, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, forbiddenEnding, addErosion, purify, erosionFloor, erosionTier, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
 
 </script>
 <script>
@@ -2289,6 +2325,8 @@ function diffRows(d) {
     return `<tr><td>${x.name}</td><td>${x.from}</td><td class="arrow">→</td><td><strong>${x.to}</strong></td><td><span class="dlt ${good ? 'up' : 'down'}">${v > 0 ? '+' : ''}${v}</span></td></tr>`;
   }).join('')}</table>`;
 }
+// 魔法名（禁術魔法は赤紫で表示）
+function spName(sp) { return sp.forbidden ? `<span class="fspell" title="禁術魔法">${sp.n}</span>` : sp.n; }
 function spellCard(id) {
   const e = S.spells.find(x => x.id === id) || { id, lv: 1 }; const sp = SPELL[id];
   const st = spellStats(S, e, nextEnemyDef(S.turn));
@@ -2296,7 +2334,7 @@ function spellCard(id) {
   if (st.total != null) kv.push(['予想ダメージ', st.total], ['効率', st.perTick]);
   if (st.heal != null) kv.push(['回復量', st.heal]);
   if (st.shield != null) kv.push(['バリア', st.shield]);
-  return `<div class="gotcard">${elChip(sp.el)} <span class="n">${sp.n}</span> <span class="note">Lv${e.lv}${sp.rare ? '・レア' : ''}</span>
+  return `<div class="gotcard">${elChip(sp.el)} <span class="n">${spName(sp)}</span> <span class="note">Lv${e.lv}${sp.rare ? '・レア' : ''}${sp.forbidden ? '・禁術' : ''}</span>
     <div class="d">${spellDesc(sp)}</div><div class="kv">${kv.map(([k, v]) => `<div>${k}<b>${v}</b></div>`).join('')}</div>
     </div>`;
 }
@@ -2310,7 +2348,7 @@ function growthTable(id) {
 }
 function showGrowth(id) {
   const sp = SPELL[id];
-  openModal(`<div class="pop"><div class="kicker">魔法の成長</div><h2>${elChip(sp.el)} ${sp.n}</h2>
+  openModal(`<div class="pop"><div class="kicker">魔法の成長</div><h2>${elChip(sp.el)} ${spName(sp)}</h2>
     ${growthTable(id)}
     <p class="note">Lvが1上がるごとに威力・回復量・強化の効果量が基本の12%ずつ増えます（Lv5で×1.48）。Lv3以上でCTが1短くなります。弱体化の効果量はLvで変わりません。数値は今の能力で次の試験相手に当てたときの目安です。</p>
     <div class="row"><button class="btn main" id="growClose">閉じる</button></div></div>`);
@@ -2343,7 +2381,7 @@ function chooseSocial() {
     const due = milestoneDue(S, k); const left = gradLeft(S, k);
     return `<button class="scard ${S.partner === k ? 'partner' : ''} ${away ? 'away' : ''}" ${away ? 'disabled aria-disabled="true"' : `data-soc="${k}"`}>
       <div>${elChip(c.el)} <b>${c.n}</b>${due ? ` <span class="evbadge">✨ 絆${due}の出来事</span>` : ''} <span class="sex ${c.sex === '男' ? 'm' : 'f'}">${c.sex === '男' ? '♂' : '♀'}</span> <span class="kind">${c.kind}</span>${S.partner === k ? ' <b class="pbadge">盟友</b>' : ''}</div>
-      <div class="note">${c.role}・${STAT_NAME[c.stat]}が伸びる${c.group === 'event' ? '（多め）' : ''}</div>
+      <div class="note">${c.role}・${[c.stat, c.also].filter(Boolean).map(k => STAT_NAME[k]).join('と')}が伸びる${c.gainMul ? '（かなり多め）' : c.group === 'event' ? '（多め）' : ''}</div>
       ${left && left <= GRAD_WARN ? `<div><span class="gradbadge" style="margin-left:0">🎓 まもなく卒業（残り${left}ヶ月）</span></div>` : ''}
       <div class="sbar"><div class="bar"><span style="width:${b}%"></span></div><span>${b}</span></div>
       <div class="snext">${away ? `今週は不在：${esc(away)}` : esc(bondNext(S, k))}</div></button>`; };
@@ -2632,7 +2670,7 @@ function spellTable() {
     const pw = sp.pow ? (sp.hits ? `${st.pow}×${sp.hits}` : st.pow) : '―';
     const ctTxt = st.ct !== st.baseCt ? `${st.ct}<small class="note">（${st.baseCt}）</small>` : st.ct;
     const eff = st.heal != null ? `回復${st.heal}` : st.shield != null ? `盾${st.shield}` : sp.t === 'buff' || sp.t === 'debuff' ? `${sp.dur}tick` : '';
-    return `<tr class="${eq ? '' : 'off'}"><td>${basic ? '' : elChip(sp.el) + ' '}<span class="nm">${sp.n}</span> <small class="note">${basic ? '基本' : 'Lv' + x.lv}${sp.rare ? '・レア' : ''}</small>${basic ? '' : `<button class="lvbtn" data-grow="${x.id}">成長表</button>`}${!basic && affRole(affOf(s), sp.el) ? ` <span class="badge aff">${{ main: '主適性', pure: '純化', sub: 'サブ' }[affRole(affOf(s), sp.el)]}</span>` : ''}<span class="ds">${spellDesc(sp).split('・').filter(t => !/^(CT|威力)/.test(t)).join('・') || '基本攻撃'}</span>${basic ? '' : `<span class="growth">${x.lv < SPELL_LV_MAX ? '次 ' + lvDiffText(x.id, x.lv, x.lv + 1) : '最大Lv'}</span>`}</td>
+    return `<tr class="${eq ? '' : 'off'}"><td>${basic ? '' : elChip(sp.el) + ' '}<span class="nm">${spName(sp)}</span> <small class="note">${basic ? '基本' : 'Lv' + x.lv}${sp.rare ? '・レア' : ''}${sp.forbidden ? '・禁術' : ''}</small>${basic ? '' : `<button class="lvbtn" data-grow="${x.id}">成長表</button>`}${!basic && affRole(affOf(s), sp.el) ? ` <span class="badge aff">${{ main: '主適性', pure: '純化', sub: 'サブ' }[affRole(affOf(s), sp.el)]}</span>` : ''}<span class="ds">${spellDesc(sp).split('・').filter(t => !/^(CT|威力)/.test(t)).join('・') || '基本攻撃'}</span>${basic ? '' : `<span class="growth">${x.lv < SPELL_LV_MAX ? '次 ' + lvDiffText(x.id, x.lv, x.lv + 1) : '最大Lv'}</span>`}</td>
       <td>${pw}</td><td>${ctTxt}</td><td>${st.total != null ? (st.hits > 1 ? `${st.hit}×${st.hits}` : st.total) : '―'}</td>
       <td class="${st.perTick === best ? 'best' : ''}">${st.perTick != null ? st.perTick : '―'}</td><td>${eff}</td>
       <td>${basic ? '<span class="note">常時</span>' : `<button class="${eq ? 'on' : ''}" data-eq="${x.id}" aria-pressed="${eq}">${eq ? '装備中' : '装備'}</button>`}</td></tr>`; }).join('')}
@@ -2796,7 +2834,7 @@ function prepBattle(opp, title, go, key) {
   const draw = () => {
     const def = { el: opp.el, aff: { main: [opp.el], sub: opp.sub || null } };
     const rows = S.spells.map(x => { const sp = SPELL[x.id]; const eq = S.equip.includes(x.id); const m = sp.t === 'dmg' ? matchMul(sp.el, def) : 1;
-      return `<button class="prow ${eq ? 'on' : ''}" data-peq="${x.id}">${elChip(sp.el)} <span>${sp.n} <small class="note">Lv${x.lv}</small></span>${mmBadge(m)}<span class="pst">${eq ? '装備中' : ''}</span></button>`; }).join('');
+      return `<button class="prow ${eq ? 'on' : ''}" data-peq="${x.id}">${elChip(sp.el)} <span>${spName(sp)} <small class="note">Lv${x.lv}</small></span>${mmBadge(m)}<span class="pst">${eq ? '装備中' : ''}</span></button>`; }).join('');
     const syn = equipSyn(S);
     openModal(`<div class="pop"><div class="kicker">作戦会議</div><h2>${esc(title)}</h2>
       ${oppCard(opp)}
@@ -2832,7 +2870,7 @@ function breakdown(res, name) {
   const tot = rows.reduce((a, [, r]) => a + r.dmg, 0) || 1;
   return `<div class="bd"><h3>技ごとの戦績（${esc(name)}）</h3><div class="tblwrap"><table class="sptbl" style="min-width:420px"><thead><tr><th>魔法</th><th>使用</th><th>命中率</th><th>総ダメージ</th><th>割合</th><th>回復・盾</th></tr></thead><tbody>
   ${rows.map(([id, r]) => { const sp = id === 'basic' ? BASIC : SPELL[id];
-    return `<tr><td>${sp.el ? elChip(sp.el) + ' ' : ''}${sp.n}</td><td>${r.n}回</td><td>${r.hits ? Math.round(r.hit / r.hits * 100) + '%' : '―'}</td><td>${r.dmg || '―'}</td><td>${r.dmg ? Math.round(r.dmg / tot * 100) + '%' : ''}</td><td>${r.heal ? '回復' + r.heal : ''}${r.shield ? ' 盾' + r.shield : ''}</td></tr>`; }).join('')}
+    return `<tr><td>${sp.el ? elChip(sp.el) + ' ' : ''}${spName(sp)}</td><td>${r.n}回</td><td>${r.hits ? Math.round(r.hit / r.hits * 100) + '%' : '―'}</td><td>${r.dmg || '―'}</td><td>${r.dmg ? Math.round(r.dmg / tot * 100) + '%' : ''}</td><td>${r.heal ? '回復' + r.heal : ''}${r.shield ? ' 盾' + r.shield : ''}</td></tr>`; }).join('')}
   </tbody></table></div></div>`;
 }
 
@@ -2886,7 +2924,7 @@ function renderEnd() {
     <p class="note" style="margin:4px 0 0">${SC.summary ? SC.summary(s) : `中間試験 ${s.results.mid ? '合格' : '不合格'}／選抜試験 ${s.results.sel ? '突破' : '敗退'}／卒業大会 ${reach}`}</p></div></div>
     ${SC.ending ? (() => { const e = SC.ending(s); return `<div class="cheer"><div class="note">エンディング${SC.erosion ? `　最終侵食 ${s.erosion}` : ''}</div><h3 style="margin:4px 0">${esc(e.title)}</h3><p class="txt">${esc(e.text)}</p></div>`; })() : ''}
     <div class="stats">${STATS.map(k => `<div class="st"><span>${STAT_NAME[k]}</span><span class="g">${grade(k, s.stats[k])}</span><span class="v">${R0(s.stats[k])}</span><span class="dcell"></span><div class="bar"><span style="width:${Math.min(100, k === 'hp' ? s.stats[k] / 7.5 : s.stats[k] / 2.5)}%"></span></div></div>`).join('')}</div>
-    <p><strong>最終ビルド：</strong>${s.equip.map(id => `${elChip(SPELL[id].el)} ${SPELL[id].n}`).join('　')}</p>
+    <p><strong>最終ビルド：</strong>${s.equip.map(id => `${elChip(SPELL[id].el)} ${spName(SPELL[id])}`).join('　')}</p>
     ${s.partner ? `<div class="cheer"><div class="note">盟友</div>${speaker(s.partner)}<p class="txt">${esc(CHAR_STORY[s.partner].ending)}</p><div class="note">サブ適性 ${ELEM[s.sub].n}／絆の物語：${['s20', 's60'].filter(k => s.flags[k + s.partner]).length}章</div></div>` : `<p class="note">盟友の誓いは立てなかった。卒業後の道は、ひとりで切り拓いていく。</p>`}
     <p><strong>適性：</strong>主 ${s.affinity.map(e => ELEM[e].n).join('・')}${s.sub ? `／サブ ${ELEM[s.sub].n}` : ''}</p>
     <p><strong>特性：</strong>${s.passives.map(p => PASSIVES[p].n).join('・') || 'なし'}</p>
