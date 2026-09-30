@@ -810,7 +810,8 @@ function has(s, id) { return s.passives.includes(id); }
 
 // 主適性に対応するステータスの授業成長補正
 function affGrow(s, k) { let w = 0; for (const e of s.affinity) w += (ELEM_STAT[e][k] || 0); return 1 + AFF.grow * w; }
-function growMul(s) { return COND_MUL[s.cond] * (has(s, 'commoner_grit') ? 1.1 : 1); }
+// SC.growMul＝シナリオ全体の成長倍率（授業・研究・交流・儀式などの能力の伸びすべてに掛かる。本編は1）
+function growMul(s) { return COND_MUL[s.cond] * (has(s, 'commoner_grit') ? 1.1 : 1) * (SC.growMul || 1); }
 // ステータスを増減する。内部は小数で保持し、戻り値は表示上（整数）の変化量。
 // 知力が下がって装備枠が減った場合は、後ろに装備した魔法から外す（装備数が枠を超えないように）。
 function gain(s, k, v) {
@@ -834,9 +835,9 @@ function failRate(s) { return clamp(Math.max(0, (s.fatigue - 50) * 1.6) + erosio
 const EROSION_BASE_GROW = 0.7;
 const EROSION_TIERS = [   // min 以上で適用（上の段階ほどバフもペナルティも大きい）
   { min: 0, n: '平静', grow: 1.0, rest: 0, fail: 0 },
-  { min: 30, n: '揺らぎ', grow: 1.3, rest: 8, fail: 5 },
-  { min: 60, n: '蝕み', grow: 1.8, rest: 16, fail: 10 },
-  { min: 90, n: '深淵の淵', grow: 2.5, rest: 25, fail: 18 },
+  { min: 30, n: '揺らぎ', grow: 1.2, rest: 8, fail: 5 },
+  { min: 60, n: '蝕み', grow: 1.5, rest: 16, fail: 10 },
+  { min: 90, n: '深淵の淵', grow: 2.0, rest: 25, fail: 18 },
 ];
 function erosionTier(s) { let r = null; if (SC.erosion) for (const x of EROSION_TIERS) if ((s.erosion || 0) >= x.min) r = x; return r; }
 // 授業・研究の成長倍率（本編は1。禁術の学院は 0.7 × 段階の成長バフ）
@@ -2238,6 +2239,7 @@ SCENARIOS.forbidden = {
   origins: FORBIDDEN_ORIGINS, chars: FORBIDDEN_CHARS, charStory: FORBIDDEN_CHAR_STORY, starEvents: FORBIDDEN_STAR_EVENTS, groups: FORBIDDEN_GROUPS,
   affinityPool: ['dark', 'fire'], affinityChoice: true,   // 主適性は闇か火から選ぶ
   erosion: true, ritual: true,                            // 侵食と禁術儀式を使う
+  growMul: 0.8,                                           // 全体の成長（経験値）を本編の80%に
   exams: [
     { key: 'mid', week: 48, name: '1年目 実戦演習', short: '実戦演習', desc: '勝てば全能力上昇と特性を獲得', next: '2年目へ' },
     { key: 'sel', week: 96, name: '2年目 審問官迎撃', short: '審問官迎撃', desc: '勝てば防衛戦で先遣隊の相手を免除', next: '3年目へ' },
@@ -2597,7 +2599,7 @@ function render() {
         <div class="fat ${fatCls}" data-k="fatigue"><span class="k">疲労</span><strong class="v">${sv.fatigue}</strong> / 100${(() => { const x = (s._delta || []).find(y => y.k === 'fatigue'); if (!x) return ''; const v = x.to - x.from; return `<span class="dlt ${v < 0 ? 'up' : 'down'}">${v > 0 ? '+' : ''}${v}</span>`; })()}<div class="bar"><span class="base" style="width:${sv.fatigue}%"></span></div></div>
         <div data-k="cond"><span class="k">調子</span><strong class="v">${COND[sv.cond]}</strong>${(() => { const x = (s._delta || []).find(y => y.k === 'cond'); return x ? `<span class="dlt ${x.up ? 'up' : 'down'}">${x.up ? '▲' : '▼'}</span>` : ''; })()} <span class="note">成長×${COND_MUL[s.cond]}</span></div>
         ${SC.erosion ? (() => { const tr = erosionTier(s), pe = erosionPenalty(s), fl = erosionFloor(s), ev = sv.erosion != null ? sv.erosion : s.erosion;
-          return `<div class="ero ${ev >= 90 ? 'bad' : ev >= 60 ? 'warn' : ''}" data-k="erosion" style="grid-column:1/-1"><span class="k">侵食（${tr.n}・授業と研究の成長×${+erosionGrowth(s).toFixed(2)}）</span><strong class="v">${ev}</strong> / 100<div class="bar"><span class="base" style="width:${ev}%"></span></div><small>${pe.rest || pe.fail ? `休息の回復-${pe.rest}・失敗率+${pe.fail}%` : '30以上で成長バフと段階ペナルティ'}${fl ? `・下限${fl}（深淵の傷跡）` : ''}・100で暴走</small></div>`; })() : ''}
+          return `<div class="ero ${ev >= 90 ? 'bad' : ev >= 60 ? 'warn' : ''}" data-k="erosion" style="grid-column:1/-1"><span class="k">侵食（${tr.n}・授業と研究の成長×${+(erosionGrowth(s) * (SC.growMul || 1)).toFixed(2)}）</span><strong class="v">${ev}</strong> / 100<div class="bar"><span class="base" style="width:${ev}%"></span></div><small>${pe.rest || pe.fail ? `休息の回復-${pe.rest}・失敗率+${pe.fail}%` : '30以上で成長バフと段階ペナルティ'}${fl ? `・下限${fl}（深淵の傷跡）` : ''}・100で暴走</small></div>`; })() : ''}
         <div><span class="k">魔法の装備枠（知力で増加）</span><strong>${s.equip.length} / ${slots(s)}</strong></div>
         <div><span class="k">詠唱短縮（知力）</span><strong>${Math.round(Math.min(0.3, s.stats.int / 800) * 100)}%</strong></div>
       </div>
@@ -2657,9 +2659,9 @@ function tabBody() {
     <div class="plist">${s.passives.length ? s.passives.map(p => `<div class="${PASSIVES[p].neg ? 'neg' : ''}">${PASSIVES[p].neg ? '☠ ' : PASSIVES[p].u ? '✦ ' : ''}${PASSIVES[p].n}<span>${PASSIVES[p].d}</span></div>`).join('') : '<p class="note">まだ特性はありません。交流や試験の合格で獲得できます。</p>'}</div>
     ${SC.erosion ? `<h3 style="margin:18px 0 8px;font-size:15px">侵食</h3>
     <div class="tblwrap"><table class="sptbl gtbl" style="min-width:360px"><thead><tr><th>段階</th><th>侵食</th><th>授業・研究の成長</th><th>休息の回復</th><th>失敗率</th></tr></thead><tbody>
-    ${EROSION_TIERS.map(x => { const on = erosionTier(s) === x; const m = has(s, 'abyss_temper') ? 0.5 : 1; return `<tr class="${on ? 'cur' : ''}"><td>${x.n}${on ? ' ◀いま' : ''}</td><td class="num">${x.min}〜</td><td class="num">×${+(EROSION_BASE_GROW * x.grow).toFixed(2)}</td><td class="num">${x.rest ? '-' + Math.round(x.rest * m) : '―'}</td><td class="num">${x.fail ? '+' + Math.round(x.fail * m) + '%' : '―'}</td></tr>`; }).join('')}
+    ${EROSION_TIERS.map(x => { const on = erosionTier(s) === x; const m = has(s, 'abyss_temper') ? 0.5 : 1; return `<tr class="${on ? 'cur' : ''}"><td>${x.n}${on ? ' ◀いま' : ''}</td><td class="num">${x.min}〜</td><td class="num">×${+(EROSION_BASE_GROW * x.grow * (SC.growMul || 1)).toFixed(2)}</td><td class="num">${x.rest ? '-' + Math.round(x.rest * m) : '―'}</td><td class="num">${x.fail ? '+' + Math.round(x.fail * m) + '%' : '―'}</td></tr>`; }).join('')}
     </tbody></table></div>
-    <p class="note">禁術の学院では、授業・研究の成長が本編の70%に抑えられます。侵食が高い段階ほど成長バフがかかりますが、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。確実に下げる手段はなく、交流中の出来事・夜の隠れた出来事・禁域の月の休息で下がることがあります。</p>` : ''}
+    <p class="note">禁術の学院では、能力の伸び全体が本編の${Math.round((SC.growMul || 1) * 100)}%で、授業・研究はさらに70%に抑えられます（表の倍率はこれらを掛けた値）。侵食が高い段階ほど成長バフがかかりますが、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。確実に下げる手段はなく、交流中の出来事・夜の隠れた出来事・禁域の月の休息で下がることがあります。</p>` : ''}
     <h3 style="margin:18px 0 8px;font-size:15px">習得に挑戦中</h3>
     ${s.pending.length ? `<div class="plist">${s.pending.map(a => `<div>${a.kind === 'passive' ? '特性' : '魔法'}【${a.kind === 'passive' ? PASSIVES[a.id].n : SPELL[a.id].n}】<span>コツLv${a.fails}・現在の成功率${Math.round(attemptRate(s, a) * 100)}%${a.src && CHARS[a.src] ? `・${CHARS[a.src].n}と交流すると再挑戦しやすい` : ''}</span></div>`).join('')}</div>` : '<p class="note">習得に失敗した特性や魔法は、ここに残り、あとで再挑戦できます。失敗するたびに成功しやすくなります。</p>'}
     <h3 style="margin:18px 0 8px;font-size:15px">関係の壁</h3>
