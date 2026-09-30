@@ -447,6 +447,11 @@ const SPELLS = [
   { id: 'd2', el: 'dark', n: '呪詛', ct: 7, t: 'debuff', stat: 'def', val: -0.35, dur: 8 },
   { id: 'd3', el: 'dark', n: 'ドレインタッチ', ct: 5, t: 'dmg', pow: 1.0, lifesteal: 0.5 },
   { id: 'd4', el: 'dark', n: 'アビスゲート', ct: 10, t: 'dmg', pow: 3.6, self: 0.12, crit: 0.3, rare: 1 },
+  // 追加の通常魔法（パラメータ違い）：accB＝命中補正（マイナスもあり）、crit＝会心率、defIgnore＝相手の魔法防御をその割合だけ無視
+  { id: 'f5', el: 'fire', n: '紅蓮の槍', ct: 5, t: 'dmg', pow: 2.0, accB: -20 },
+  { id: 'w5', el: 'water', n: '凍てつく刃', ct: 4, t: 'dmg', pow: 1.25, crit: 0.2 },
+  { id: 'g5', el: 'wood', n: '茨の絡め手', ct: 3, t: 'dmg', pow: 0.8, accB: 40 },
+  { id: 'l5', el: 'light', n: '天光の矢', ct: 4, t: 'dmg', pow: 1.3, defIgnore: 0.2 },
   // 禁術魔法（forbidden）：禁術の学院の大儀式とヴェインの伝授でだけ手に入る。研究・対戦相手・初期魔法には出ない
   //   hpCost＝撃つたびに最大HPのその割合を自傷 / initCt＝戦闘開始からそのtick数が過ぎるまで撃てない / pierce＝相手の魔法防御を無視
   { id: 'x1', el: 'fire', n: '血盟の業火', ct: 3, t: 'dmg', pow: 1.9, hpCost: 0.1, forbidden: 1 },
@@ -461,7 +466,7 @@ function spellDesc(s) {
   const p = [];
   if (s.t === 'dmg') {
     p.push(`威力${s.hits ? s.pow + '×' + s.hits : s.pow}`);
-    if (s.accB) p.push(`命中+${s.accB}`);
+    if (s.accB) p.push(`命中${s.accB > 0 ? '+' : ''}${s.accB}`);
     if (s.burn) p.push(s.drain ? '毒（4tick継続ダメージ・与えた分を吸収）' : '火傷（4tick継続ダメージ）');
     if (s.delay) p.push(`相手の全CT+${s.delay}`);
     if (s.lifesteal) p.push(`与ダメの${s.lifesteal * 100}%回復`);
@@ -469,6 +474,7 @@ function spellDesc(s) {
     if (s.crit) p.push(`会心率+${s.crit * 100}%`);
     if (s.defScale) p.push('自身の魔法防御も威力に加算');
     if (s.pierce) p.push('魔法防御を無視');
+    if (s.defIgnore) p.push(`魔法防御を${s.defIgnore * 100}%無視`);
     if (s.hpCost) p.push(`撃つたびに最大HPの${s.hpCost * 100}%を失う`);
     if (s.initCt) p.push(`戦闘開始から${s.initCt}tickは撃てない`);
   } else if (s.t === 'heal') p.push(`最大HPの${s.val * 100}%回復（使うたび効果減衰）`);
@@ -558,13 +564,16 @@ const PASSIVES = {
   rite_ward: { n: '儀式の護符', d: '禁術儀式での侵食の上昇-40%' },
   abyss_scar: { n: '深淵の傷跡', d: '侵食の下限が20になる（浄化してもこれ以下に下がらない）', neg: 1 },
   abyss_scar2: { n: '深淵の傷跡・深', d: '侵食の下限が40になる（浄化してもこれ以下に下がらない）', neg: 1 },
+  calm_mind: { n: '明鏡止水', d: '授業・研究などの失敗率-5%' },
+  friendly: { n: '社交家', d: '交流で上がる絆×1.2' },
+  spell_crafter: { n: '練達の魔導', d: '戦闘時、すべての魔法の会心率+8%' },
   blaze_heart: { n: '烈火の闘志', d: '火属性の魔法の威力+15%・会心率+5%' },
   mana_shell: { n: '魔力障壁', d: '戦闘開始時、魔法防御に応じたバリアを張る' },
   second_wind: { n: '起死回生', d: '戦闘中1度だけ、HP30%以下になると最大HPの20%回復' },
   finisher: { n: '追い打ち', d: '相手のHPが30%以下のとき与ダメージ+20%' },
   bookworm: { n: '読書家', d: '研究の進捗+20%' },
 };
-const COMMON_PASSIVES = ['focus', 'guts', 'flow', 'wall', 'adversity', 'hard', 'sleep', 'charm', 'scholar', 'tough', 'sniper', 'mana_shell', 'second_wind', 'finisher', 'bookworm'];
+const COMMON_PASSIVES = ['focus', 'guts', 'flow', 'wall', 'adversity', 'hard', 'sleep', 'charm', 'scholar', 'tough', 'sniper', 'mana_shell', 'second_wind', 'finisher', 'bookworm', 'calm_mind', 'friendly', 'spell_crafter'];
 
 // ---- 人物 ----
 // 人物は2つのグループに分かれる（GROUPS）。
@@ -815,18 +824,23 @@ function fmtGain(obj) {
 }
 
 // ===== 育成コマンド =====
-function failRate(s) { return clamp(Math.max(0, (s.fatigue - 50) * 1.6) + erosionPenalty(s).fail, 0, 80); }
+function failRate(s) { return clamp(Math.max(0, (s.fatigue - 50) * 1.6) + erosionPenalty(s).fail - (has(s, 'calm_mind') ? 5 : 0), 0, 80); }
 
 // ===== 侵食（禁術の学院のみ。SC.erosion が true のシナリオで使う） =====
 // 0〜100。禁術儀式などプレイヤーの選択でだけ増え、時間経過では増えない。
-// 段階ペナルティ：休息の回復量が減り、全育成コマンドの失敗率が上がる（段階が上がるほど重く、両方が同時にかかる）。
+// 授業・研究の成長は本編の70%（EROSION_BASE_GROW）に抑えられ、侵食の段階が上がるほど成長バフ（grow）がかかる。
+// その代わり段階ペナルティ：休息の回復量が減り、全育成コマンドの失敗率が上がる（段階が上がるほど重く、両方が同時にかかる）。
 // 100に達すると暴走：能力の大幅低下・魔法の没収・マイナス特性「深淵の傷跡」（傷跡の深さで侵食の下限が上がる）。
-const EROSION_TIERS = [   // min 以上で適用（上の段階ほど重い）
-  { min: 30, n: '侵食・浅', rest: 8, fail: 5 },
-  { min: 60, n: '侵食・中', rest: 16, fail: 10 },
-  { min: 80, n: '侵食・深', rest: 25, fail: 18 },
+const EROSION_BASE_GROW = 0.7;
+const EROSION_TIERS = [   // min 以上で適用（上の段階ほどバフもペナルティも大きい）
+  { min: 0, n: '平静', grow: 1.0, rest: 0, fail: 0 },
+  { min: 30, n: '揺らぎ', grow: 1.3, rest: 8, fail: 5 },
+  { min: 60, n: '蝕み', grow: 1.8, rest: 16, fail: 10 },
+  { min: 90, n: '深淵の淵', grow: 2.5, rest: 25, fail: 18 },
 ];
 function erosionTier(s) { let r = null; if (SC.erosion) for (const x of EROSION_TIERS) if ((s.erosion || 0) >= x.min) r = x; return r; }
+// 授業・研究の成長倍率（本編は1。禁術の学院は 0.7 × 段階の成長バフ）
+function erosionGrowth(s) { const x = erosionTier(s); return x ? EROSION_BASE_GROW * x.grow : 1; }
 function erosionPenalty(s) {
   const x = erosionTier(s); if (!x) return { rest: 0, fail: 0 };
   const m = has(s, 'abyss_temper') ? 0.5 : 1;
@@ -869,7 +883,7 @@ function runawayCheck(s) {
 // 小儀式（堅実な欲）と大儀式（深淵の誘惑）の2種類。特別期間（ritualMul）中は、どちらも報酬も侵食の増え方も2倍
 const RITUALS = {
   small: { n: '小儀式', sub: '堅実な欲', fatigue: 8, erosion: [4, 7], failErosion: [2, 4] },
-  big: { n: '大儀式', sub: '深淵の誘惑', fatigue: 15, erosion: [12, 18], failErosion: [6, 9] },
+  big: { n: '大儀式', sub: '深淵の誘惑', fatigue: 15, erosion: [25, 35], failErosion: [10, 14] },   // 禁域の月なら+50〜70：一気に高侵食へ
 };
 function ritualMul(s) { const sp = specialOf(s.turn); return sp && sp.ritualMul ? sp.ritualMul : 1; }
 function ritualStat(s, lo, hi) {
@@ -999,7 +1013,7 @@ function doTrain(s, stat) {
   const spread = s.origin === 'commoner' ? [3.2, 3.7] : [2.8, 4.1];   // 週あたりの成長量（月単位版と総量が揃うよう調整）
   let base = (spread[0] + rnd() * (spread[1] - spread[0])) * (has(s, 'hard') ? 1.15 : 1) * cmul;
   const g = {};
-  const mul = (k) => (k === 'hp' ? 3 : 1) * s.grow[k] * growMul(s) * affGrow(s, k);
+  const mul = (k) => (k === 'hp' ? 3 : 1) * s.grow[k] * growMul(s) * affGrow(s, k) * erosionGrowth(s);
   g[stat] = gain(s, stat, base * mul(stat));
   // 副次成長
   const side = { hp: 'def', atk: 'acc', int: 'acc', def: 'hp', acc: 'int' }[stat];
@@ -1024,9 +1038,9 @@ function doResearch(s) {
   const out = { kind: 'research', lines: [] };
   s.fatigue = clamp(s.fatigue + 16 * (has(s, 'tough') ? 0.75 : 1), 0, 100);
   if (rnd() * 100 < failRate(s) * 0.8) { s.cond = Math.max(0, s.cond - 1); out.lines.push('研究に集中できず、成果は出なかった…（調子ダウン）'); out.fail = true; out.events = [{ title: '研究が行き詰まった', text: '疲れで集中できず、成果は出なかった…', bad: true }]; return out; }
-  const inc = Math.round((ri(24, 34) + s.stats.int / 15) * (has(s, 'bookworm') ? 1.2 : 1));
+  const inc = Math.round((ri(24, 34) + s.stats.int / 15) * (has(s, 'bookworm') ? 1.2 : 1) * erosionGrowth(s));
   s.research += inc;
-  const di = gain(s, 'int', (1 + rnd()) * s.grow.int * growMul(s) * 0.4);
+  const di = gain(s, 'int', (1 + rnd()) * s.grow.int * growMul(s) * 0.4 * erosionGrowth(s));
   if (s.research >= 100) { s.research -= 100; out.offer = researchOffer(s); }
   else out.lines.push(`研究を進めた。進捗 ${s.research}%（+${inc}%） 知力+${di}`);
   out.events = cmdEvents(s, 'research');
@@ -1034,7 +1048,7 @@ function doResearch(s) {
 }
 function learnChoice(s, id) {
   const sp = SPELL[id]; const r = addSpell(s, id);
-  const di = gain(s, 'int', (1 + rnd()) * s.grow.int * growMul(s));
+  const di = gain(s, 'int', (1 + rnd()) * s.grow.int * growMul(s) * erosionGrowth(s));
   return r.up ? `研究で【${sp.n}】の理解が深まった！（Lv${r.lv}） 知力+${di}`
     : `新魔法【${sp.n}】（${ELEM[sp.el].n}${sp.rare ? '・レア' : ''}）を習得した！ 知力+${di}`;
 }
@@ -1310,7 +1324,7 @@ function doSocial(s, cid) {
   const c = CHARS[cid];
   // 交流で上がる絆は控えめ（絆の主な伸びは五星とのランダムイベント）。イベントの人物は交流が主な手段なので多め
   const bFrom = s.bonds[cid];
-  addBond(s, cid, c.group === 'event' ? ri(4, 6) : ri(3, 4));
+  addBond(s, cid, (c.group === 'event' ? ri(4, 6) : ri(3, 4)) * (has(s, 'friendly') ? 1.2 : 1));
   const gm = c.gainMul || (c.group === 'event' ? EVENT_GAIN : 1);   // gainMul＝その人物だけの伸び倍率（ヴェインなど）
   const g = {}; for (const k of [c.stat, c.also].filter(Boolean)) g[k] = gain(s, k, (0.8 + rnd() * 0.6) * (k === 'hp' ? 3 : 1) * s.grow[k] * growMul(s) * gm);
   const place = pick(c.where); const line = pick(c.talk);
@@ -1683,7 +1697,7 @@ function spellStats(s, entry, enemyDef) {
   if (sp.t === 'dmg') {
     let atk = s.stats.atk * (P('seal_celia') ? 1.1 : 1) * sp.pow * potMul + (sp.defScale ? def * sp.defScale : 0);
     if (syn.includes('fire')) atk *= 1.10;
-    r.hit = Math.round(atk * (sp.pierce ? 1 : 100 / (100 + enemyDef)));
+    r.hit = Math.round(atk * (sp.pierce ? 1 : 100 / (100 + enemyDef * (1 - (sp.defIgnore || 0)))));
     r.hits = sp.hits || 1;
     r.total = r.hit * r.hits + (sp.burn ? Math.round(s.stats.atk * sp.burn * 100 / (100 + enemyDef)) * 4 : 0);
     r.perTick = +(r.total / ct).toFixed(1);
@@ -1811,9 +1825,9 @@ function cast(me, op, slot, t, push) {
       if (me.P('orphan_soul') && me.hp < me.maxHp * 0.5) atk *= 1.25;
       if (me.P('finisher') && op.hp < op.maxHp * 0.3) atk *= 1.2;
       if (me.P('abyss_fury')) atk *= 1 + 0.3 * (1 - Math.max(0, me.hp) / me.maxHp);   // 背水：残りHPが減るほど強くなる
-      const critR = 0.05 + eff(me, 'acc') / 2000 + (sp.crit || 0) + (me.syn.includes('dark') ? 0.1 : 0) + (me.P('sniper') ? 0.1 : 0) + (me.P('noir_bless') ? 0.08 : 0) + (me.P('seal_luka') ? 0.05 : 0) + (me.P('blaze_heart') ? 0.05 : 0);
+      const critR = 0.05 + eff(me, 'acc') / 2000 + (sp.crit || 0) + (me.syn.includes('dark') ? 0.1 : 0) + (me.P('sniper') ? 0.1 : 0) + (me.P('noir_bless') ? 0.08 : 0) + (me.P('seal_luka') ? 0.05 : 0) + (me.P('blaze_heart') ? 0.05 : 0) + (me.P('spell_crafter') ? 0.08 : 0);
       if (rnd() < critR) { atk *= 1.8; crits++; }
-      let dmg = atk * (sp.pierce ? 1 : 100 / (100 + eff(op, 'def'))) * matchMul(sp.el, op);
+      let dmg = atk * (sp.pierce ? 1 : 100 / (100 + eff(op, 'def') * (1 - (sp.defIgnore || 0)))) * matchMul(sp.el, op);
       if (op.P('wall')) dmg *= 0.9;
       if (op.P('noble_blood')) dmg *= 0.92;
       if (op.P('noir_bless')) dmg *= 0.95;
@@ -2294,7 +2308,7 @@ function setScenario(id) {
 }
 setScenario('main');
 
-if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, COMMON_SPELLS, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, forbiddenEnding, addErosion, purify, erosionFloor, erosionTier, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
+if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, COMMON_SPELLS, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, forbiddenEnding, addErosion, purify, erosionFloor, erosionTier, erosionGrowth, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
 
 </script>
 <script>
@@ -2583,7 +2597,7 @@ function render() {
         <div class="fat ${fatCls}" data-k="fatigue"><span class="k">疲労</span><strong class="v">${sv.fatigue}</strong> / 100${(() => { const x = (s._delta || []).find(y => y.k === 'fatigue'); if (!x) return ''; const v = x.to - x.from; return `<span class="dlt ${v < 0 ? 'up' : 'down'}">${v > 0 ? '+' : ''}${v}</span>`; })()}<div class="bar"><span class="base" style="width:${sv.fatigue}%"></span></div></div>
         <div data-k="cond"><span class="k">調子</span><strong class="v">${COND[sv.cond]}</strong>${(() => { const x = (s._delta || []).find(y => y.k === 'cond'); return x ? `<span class="dlt ${x.up ? 'up' : 'down'}">${x.up ? '▲' : '▼'}</span>` : ''; })()} <span class="note">成長×${COND_MUL[s.cond]}</span></div>
         ${SC.erosion ? (() => { const tr = erosionTier(s), pe = erosionPenalty(s), fl = erosionFloor(s), ev = sv.erosion != null ? sv.erosion : s.erosion;
-          return `<div class="ero ${ev >= 80 ? 'bad' : ev >= 60 ? 'warn' : ''}" data-k="erosion" style="grid-column:1/-1"><span class="k">侵食${tr ? `（${tr.n}）` : ''}</span><strong class="v">${ev}</strong> / 100<div class="bar"><span class="base" style="width:${ev}%"></span></div><small>${tr ? `休息の回復-${pe.rest}・失敗率+${pe.fail}%` : '30以上で段階ペナルティ'}${fl ? `・下限${fl}（深淵の傷跡）` : ''}・100で暴走</small></div>`; })() : ''}
+          return `<div class="ero ${ev >= 90 ? 'bad' : ev >= 60 ? 'warn' : ''}" data-k="erosion" style="grid-column:1/-1"><span class="k">侵食（${tr.n}・授業と研究の成長×${+erosionGrowth(s).toFixed(2)}）</span><strong class="v">${ev}</strong> / 100<div class="bar"><span class="base" style="width:${ev}%"></span></div><small>${pe.rest || pe.fail ? `休息の回復-${pe.rest}・失敗率+${pe.fail}%` : '30以上で成長バフと段階ペナルティ'}${fl ? `・下限${fl}（深淵の傷跡）` : ''}・100で暴走</small></div>`; })() : ''}
         <div><span class="k">魔法の装備枠（知力で増加）</span><strong>${s.equip.length} / ${slots(s)}</strong></div>
         <div><span class="k">詠唱短縮（知力）</span><strong>${Math.round(Math.min(0.3, s.stats.int / 800) * 100)}%</strong></div>
       </div>
@@ -2642,10 +2656,10 @@ function tabBody() {
   return `<h3 style="margin:0 0 8px;font-size:15px">特性</h3>
     <div class="plist">${s.passives.length ? s.passives.map(p => `<div class="${PASSIVES[p].neg ? 'neg' : ''}">${PASSIVES[p].neg ? '☠ ' : PASSIVES[p].u ? '✦ ' : ''}${PASSIVES[p].n}<span>${PASSIVES[p].d}</span></div>`).join('') : '<p class="note">まだ特性はありません。交流や試験の合格で獲得できます。</p>'}</div>
     ${SC.erosion ? `<h3 style="margin:18px 0 8px;font-size:15px">侵食</h3>
-    <div class="tblwrap"><table class="sptbl gtbl" style="min-width:360px"><thead><tr><th>段階</th><th>侵食</th><th>休息の回復</th><th>失敗率</th></tr></thead><tbody>
-    ${EROSION_TIERS.map(x => { const on = erosionTier(s) === x; const m = has(s, 'abyss_temper') ? 0.5 : 1; return `<tr class="${on ? 'cur' : ''}"><td>${x.n}${on ? ' ◀いま' : ''}</td><td class="num">${x.min}〜</td><td class="num">-${Math.round(x.rest * m)}</td><td class="num">+${Math.round(x.fail * m)}%</td></tr>`; }).join('')}
+    <div class="tblwrap"><table class="sptbl gtbl" style="min-width:360px"><thead><tr><th>段階</th><th>侵食</th><th>授業・研究の成長</th><th>休息の回復</th><th>失敗率</th></tr></thead><tbody>
+    ${EROSION_TIERS.map(x => { const on = erosionTier(s) === x; const m = has(s, 'abyss_temper') ? 0.5 : 1; return `<tr class="${on ? 'cur' : ''}"><td>${x.n}${on ? ' ◀いま' : ''}</td><td class="num">${x.min}〜</td><td class="num">×${+(EROSION_BASE_GROW * x.grow).toFixed(2)}</td><td class="num">${x.rest ? '-' + Math.round(x.rest * m) : '―'}</td><td class="num">${x.fail ? '+' + Math.round(x.fail * m) + '%' : '―'}</td></tr>`; }).join('')}
     </tbody></table></div>
-    <p class="note">侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。確実に下げる手段はなく、交流中の出来事・夜の隠れた出来事・禁域の月の休息で下がることがあります。</p>` : ''}
+    <p class="note">禁術の学院では、授業・研究の成長が本編の70%に抑えられます。侵食が高い段階ほど成長バフがかかりますが、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。確実に下げる手段はなく、交流中の出来事・夜の隠れた出来事・禁域の月の休息で下がることがあります。</p>` : ''}
     <h3 style="margin:18px 0 8px;font-size:15px">習得に挑戦中</h3>
     ${s.pending.length ? `<div class="plist">${s.pending.map(a => `<div>${a.kind === 'passive' ? '特性' : '魔法'}【${a.kind === 'passive' ? PASSIVES[a.id].n : SPELL[a.id].n}】<span>コツLv${a.fails}・現在の成功率${Math.round(attemptRate(s, a) * 100)}%${a.src && CHARS[a.src] ? `・${CHARS[a.src].n}と交流すると再挑戦しやすい` : ''}</span></div>`).join('')}</div>` : '<p class="note">習得に失敗した特性や魔法は、ここに残り、あとで再挑戦できます。失敗するたびに成功しやすくなります。</p>'}
     <h3 style="margin:18px 0 8px;font-size:15px">関係の壁</h3>
@@ -2731,7 +2745,7 @@ function animateStats() {
   if (old.erosion != null && old.erosion !== cur.erosion) {
     const row = document.querySelector('[data-k="erosion"]');
     if (row) { countUp(row.querySelector('.v'), old.erosion, cur.erosion); row.querySelector('.bar .base').style.width = cur.erosion + '%';
-      row.classList.toggle('warn', cur.erosion >= 60 && cur.erosion < 80); row.classList.toggle('bad', cur.erosion >= 80);
+      row.classList.toggle('warn', cur.erosion >= 60 && cur.erosion < 90); row.classList.toggle('bad', cur.erosion >= 90);
       floatText(row, `${cur.erosion > old.erosion ? '+' : ''}${cur.erosion - old.erosion}`, cur.erosion < old.erosion ? 'up' : 'down'); }
   }
   if (old.cond !== cur.cond) {
