@@ -907,8 +907,9 @@ function runawayCheck(s) {
 // ---- 禁術儀式：侵食と引き換えに、能力・魔法・特性をランダムに得る ----
 // 小儀式（堅実な欲）と大儀式（深淵の誘惑）の2種類。特別期間（ritualMul）中は、どちらも報酬も侵食の増え方も2倍
 const RITUALS = {
-  small: { n: '小儀式', sub: '堅実な欲', fatigue: 8, erosion: [4, 7], failErosion: [2, 4] },
-  big: { n: '大儀式', sub: '深淵の誘惑', fatigue: 15, erosion: [25, 35], failErosion: [10, 14] },   // 禁域の月なら+50〜70：一気に高侵食へ
+  // stat＝能力上昇1回分の基礎値、statN＝能力上昇の回数（大儀式はこれに魔法か特性の確定枠が付く）
+  small: { n: '小儀式', sub: '堅実な欲', fatigue: 8, erosion: [4, 7], failErosion: [2, 4], stat: [3, 6], statN: 1 },
+  big: { n: '大儀式', sub: '深淵の誘惑', fatigue: 15, erosion: [25, 35], failErosion: [10, 14], stat: [7, 10], statN: 1 },   // 禁域の月なら+50〜70：一気に高侵食へ
 };
 function ritualMul(s) { const sp = specialOf(s.turn); return sp && sp.ritualMul ? sp.ritualMul : 1; }
 function ritualStat(s, lo, hi) {
@@ -928,10 +929,12 @@ function ritualPassive(s) {
 // 1回分の報酬。小儀式：能力80%・魔法20%。大儀式：魔法か特性が確定（魔法60%・特性40%）＋大きな能力上昇×2
 function ritualReward(s, kind) {
   if (kind === 'big') {
+    const R = RITUALS.big;
     const sure = (rnd() < 0.6 ? ritualSpell(s, true) : ritualPassive(s)) || ritualSpell(s, true);
-    return [sure, ritualStat(s, 5, 8), ritualStat(s, 5, 8)];
+    return [sure, ...Array.from({ length: R.statN }, () => ritualStat(s, R.stat[0], R.stat[1]))];
   }
-  return [rnd() < 0.8 ? ritualStat(s, 4, 7) : ritualSpell(s)];
+  const R = RITUALS.small;
+  return [rnd() < 0.8 ? ritualStat(s, R.stat[0], R.stat[1]) : ritualSpell(s)];
 }
 function doRitual(s, kind) {
   const R = RITUALS[kind] || RITUALS.small; const m = ritualMul(s);
@@ -2070,7 +2073,7 @@ function mainExamReward(s, key, won) {
 //  本編の育成の仕組みはそのまま使い、次を足す：
 //    侵食（0〜100）… 禁術儀式などの選択でだけ増える。段階ペナルティと暴走（上の「侵食」の節）
 //    禁術儀式 ……… 新コマンド。侵食と引き換えに能力・魔法・特性をランダムに得る
-//    浄化 ………… 確定の回復手段はなし。ターン開始時の強制浄化（侵食60以上）と隠し救済イベント（侵食が高いほど起きやすい）、
+//    浄化 ………… 確定の回復手段はなし。ターン開始時の強制浄化（侵食60以上・下がり幅5〜45）と、
 //                    特別期間「禁域の月」の休息でだけ下がる
 //  人物は盟友候補の3人（闇・火）だけ。主適性は闇か火を入学時に選ぶ。
 // =====================================================================
@@ -2126,7 +2129,7 @@ const FORBIDDEN_CHAR_STORY = {
       { label: '一緒に剣を振る', fx: { atk: 3, hp: 9, fatigue: 8, bond: 4 }, res: 'カイン：「杖で剣の相手をする気か？ ……いいだろう、付き合え」' }] },
     s60: { title: '騎士団からの手紙', text: '騎士団から、カインに復帰の誘いが届いた。条件は「学院の禁術師を討つこと」。\nカイン：「……戻れる、らしい。お前たちを売ればな」', choices: [
       { label: 'お前は、もう騎士だ', fx: { atk: 5, def: 3, bond: 7 }, res: 'カインは手紙を炎で焼いた。\nカイン：「……ああ。俺の守るものは、ここにある」' },
-      { label: '一緒に闇を制御しよう', fx: { int: 3, purify: 8, bond: 6 }, res: 'カイン：「……闇に呑まれない騎士、か。悪くない。二人ならできるだろう」' }] },
+      { label: '一緒に闇を制御しよう', fx: { int: 3, fatigue: -15, bond: 6 }, res: 'カイン：「……闇に呑まれない騎士、か。悪くない。二人ならできるだろう」' }] },
     oath: 'カイン：「騎士団の誓いは破った。……だが、お前への誓いは破らない。俺の盟友になってくれ」',
     wait: 'カイン：「……そうか。いい、待つのは慣れている」',
     cheer: 'カイン：「前は俺が守る。お前は、ただ撃ち抜け」',
@@ -2138,7 +2141,7 @@ const FORBIDDEN_CHAR_STORY = {
       { label: '記録を手伝う', fx: { int: 4, fatigue: 6, bond: 4 }, res: 'ヴェスパー：「……ありがとうございます。一人でつけるには、重い記録でしたから」' },
       { label: 'あなたは大丈夫なの？', fx: { cond: 1, bond: 5 }, res: 'ヴェスパー：「……私の心配をする人は、初めてです。……大丈夫、ではないかもしれません」' }] },
     s60: { title: '最後のページ', text: '記録簿の最後のページに、ヴェスパー自身の名前が書かれていた。\nヴェスパー：「私の侵食は、もう下がりません。だから、自分で記録しておこうと」', choices: [
-      { label: 'そのページは、まだ白紙にしておこう', fx: { int: 3, purify: 10, bond: 7 }, res: 'ヴェスパー：「……白紙、ですか。……では、ペンは置いておきます。あなたが隣にいるうちは」' },
+      { label: 'そのページは、まだ白紙にしておこう', fx: { int: 3, cond: 1, bond: 7 }, res: 'ヴェスパー：「……白紙、ですか。……では、ペンは置いておきます。あなたが隣にいるうちは」' },
       { label: '一緒に、呑まれない方法を探そう', fx: { int: 5, research: 15, bond: 6 }, res: 'ヴェスパー：「……ええ。探しましょう。二人分の記録を、ハッピーエンドで閉じるために」' }] },
     oath: 'ヴェスパー：「私の記録に、あなたの名前を並べて綴じてもいいですか。……盟友として」',
     wait: 'ヴェスパー：「……わかりました。ページは、空けておきます」',
@@ -2148,11 +2151,11 @@ const FORBIDDEN_CHAR_STORY = {
   },
   lilith: {
     s20: { title: '月の儀式', text: '満月の夜、湖のほとりでリリスがひとり儀式をしていた。\nリリス：「あら、見つかっちゃった。……これはね、誰かの闇を少しだけ肩代わりする儀式なの」', choices: [
-      { label: '儀式を手伝う', fx: { acc: 3, purify: 6, bond: 4 }, res: 'リリス：「ふふ、上手じゃない。……あなたの闇も、少しだけ軽くしておいたわ」' },
+      { label: '儀式を手伝う', fx: { acc: 3, fatigue: -10, bond: 4 }, res: 'リリス：「ふふ、上手じゃない。……お礼に、あなたの疲れを少しだけ軽くしておいたわ」' },
       { label: '誰の闇を肩代わりしているの？', fx: { cond: 1, bond: 5 }, res: 'リリス：「……ないしょ。でも、聞いてくれてうれしいわ」' }] },
     s60: { title: '代償', text: 'リリスが倒れた。肩代わりしてきた闇が、限界を超えたらしい。\nリリス：「……へいき、よ。あたし、こういうの、慣れてるから」', choices: [
       { label: '今度はこちらが肩代わりする', fx: { hp: 15, acc: 3, fatigue: 10, bond: 7 }, res: 'リリス：「……ばかね。……でも、ありがと。こんなこと、されたの初めて」' },
-      { label: '一緒に代償を減らす術を探そう', fx: { int: 4, purify: 8, bond: 6 }, res: 'リリス：「……二人で探すなら、見つかる気がするわ。あなたって、不思議ね」' }] },
+      { label: '一緒に代償を減らす術を探そう', fx: { int: 4, fatigue: -15, bond: 6 }, res: 'リリス：「……二人で探すなら、見つかる気がするわ。あなたって、不思議ね」' }] },
     oath: 'リリス：「ねえ、あたしと契約しない？ ……ううん、儀式じゃなくて。ずっと一緒にいる、っていう約束」',
     wait: 'リリス：「ふふ、焦らすのね。いいわ、待っててあげる」',
     cheer: 'リリス：「代償はあたしが持つわ。あなたは、思いきりやって」',
@@ -2190,7 +2193,7 @@ const FORBIDDEN_STAR_EVENTS = {
       fxChoice('資料だけ借りる', { research: 10, bond: 3 }, 'ヴェスパー：「返却期限は守ってくださいね。……冗談です」', 'vesper'),
     ], { char: 'vesper' }),
     (s, c) => mkEvent('ヴェスパー：侵食の測定', 'ヴェスパーが測定用の水晶を差し出した。\nヴェスパー：「あなたの侵食、測らせてください。……心配なので」', [
-      fxChoice('素直に測ってもらう', { purify: 5, bond: 6 }, 'ヴェスパー：「……思ったより安定していますね。よかった」', 'vesper'),
+      fxChoice('素直に測ってもらう', { cond: 1, bond: 6 }, 'ヴェスパー：「……思ったより安定していますね。よかった」', 'vesper'),
       fxChoice('今日はやめておく', { cond: 1, bond: 2 }, 'ヴェスパー：「……そうですか。気が向いたら、いつでも」', 'vesper'),
     ], { char: 'vesper' }),
     (s, c) => mkEvent('ヴェスパー：静かなお茶会', '閲覧室の片隅で、ヴェスパーがお茶を淹れていた。\nヴェスパー：「……二人分、淹れてしまいました。よければ」', [
@@ -2205,7 +2208,7 @@ const FORBIDDEN_STAR_EVENTS = {
     ], { char: 'lilith' }),
     (s, c) => mkEvent('リリス：儀式の下見', 'リリスが地下礼拝堂の魔法陣を描き直していた。\nリリス：「次の儀式の準備よ。……手伝ってくれたら、代償を軽くしてあげる」', [
       fxChoice('魔法陣を一緒に描く', { acc: 3, fatigue: 6, bond: 6 }, 'リリス：「きれいな線ね。あなた、儀式向きよ」', 'lilith'),
-      fxChoice('清めの香を焚く', { purify: 4, bond: 4 }, 'リリス：「いい香り。……闇が少し静かになったでしょう？」', 'lilith'),
+      fxChoice('清めの香を焚く', { fatigue: -10, bond: 4 }, 'リリス：「いい香り。……闇が少し静かになったでしょう？」', 'lilith'),
     ], { char: 'lilith' }),
     (s, c) => mkEvent('リリス：霧の湖', '霧の湖のほとりで、リリスが裸足で水に触れていた。\nリリス：「冷たくて気持ちいいわよ。あなたもどう？」', [
       fxChoice('一緒に水に入る', { hp: 9, fatigue: -4, bond: 6 }, 'リリス：「ふふ、びしょ濡れ。……楽しいわね、こういうの」', 'lilith'),
@@ -2295,7 +2298,7 @@ SCENARIOS.forbidden = {
   nextEnemyDef(m) { return m <= 12 ? this.opponents.mid.def : m <= 24 ? this.opponents.sel.def : this.opponents.cup2.def; },
   announceWeeks: 4,
   starEventRate: 0.22,
-  turnEventOrder: ['announce', 'riteStart', 'barrier', 'rescue', 'milestones', 'starEvent', 'morning', 'generic', 'retry'],
+  turnEventOrder: ['announce', 'riteStart', 'barrier', 'milestones', 'starEvent', 'morning', 'generic', 'retry'],
   events: {
     announce: SCENARIOS.main.events.announce,
     riteStart: { desc: '禁域の月の始まり', run(s, c) {
@@ -2312,15 +2315,7 @@ SCENARIOS.forbidden = {
         text: `学院に敷かれた浄化の結界が、あなたの中の深い闇に反応した。強制的に魔力が抑え込まれる――。\n侵食-${d}`,
         diff: [{ k: 'erosion', name: '侵食', from, to: s.erosion, inv: true }] });
     } },
-    // 隠し救済：侵食が高いほど起きやすい（予告なし）
-    rescue: { desc: '隠し救済イベント（侵食が高いほど起きやすい）', run(s, c) {
-      if (!s.erosion || s.erosion <= erosionFloor(s) || rnd() >= s.erosion / 100 * 0.25) return;
-      const v = ri(10, 20);
-      c.L.push(mkEvent('月下の祈り', '眠れない夜。月明かりの差す礼拝堂で、誰かが灯した蝋燭がひとつ揺れていた。', [
-        { label: '祈りを捧げる', hint: `侵食-${v}前後`, fn: s => { const d = purify(s, v); return `静かに祈るうちに、胸の奥の冷たさがほどけていった。（侵食-${d}）`; } },
-        { label: '闇の囁きに耳を傾ける', hint: '魔法攻撃+3・調子↑', fn: s => { gain(s, 'atk', 3); s.cond = Math.min(4, s.cond + 1); return '闇が、やさしく力を分けてくれた。'; } },
-      ]));
-    } },
+
   },
   cupRounds(s) { return s.results.sel ? ['cup2', 'final'] : ['cup1', 'cup2', 'final']; },
   examReward(s, key, won) { return forbiddenExamReward(s, key, won); },
@@ -2703,7 +2698,7 @@ function tabBody() {
     <div class="tblwrap"><table class="sptbl gtbl" style="min-width:360px"><thead><tr><th>段階</th><th>侵食</th><th>授業・研究の成長</th><th>休息の回復</th><th>失敗率</th></tr></thead><tbody>
     ${EROSION_TIERS.map(x => { const on = erosionTier(s) === x; const m = has(s, 'abyss_temper') ? 0.5 : 1; return `<tr class="${on ? 'cur' : ''}"><td>${x.n}${on ? ' ◀いま' : ''}</td><td class="num">${x.min}〜</td><td class="num">×${+(EROSION_BASE_GROW * x.grow * (SC.growMul || 1)).toFixed(2)}</td><td class="num">${x.rest ? '-' + Math.round(x.rest * m) : '―'}</td><td class="num">${x.fail ? '+' + Math.round(x.fail * m) + '%' : '―'}</td></tr>`; }).join('')}
     </tbody></table></div>
-    <p class="note">禁術の学院では、能力の伸び全体が本編の${Math.round((SC.growMul || 1) * 100)}%で、授業・研究はさらに70%に抑えられます（表の倍率はこれらを掛けた値）。侵食が高い段階ほど成長バフがかかりますが、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。確実に下げる手段はなく、夜の隠れた出来事・禁域の月の休息で下がることがあります。また侵食60以上のあいだは、学院の結界に反応して強制的に浄化されることがあります（週35%・侵食-5〜45、どれだけ下がるかは読めません）。</p>` : ''}
+    <p class="note">禁術の学院では、能力の伸び全体が本編の${Math.round((SC.growMul || 1) * 100)}%で、授業・研究はさらに70%に抑えられます（表の倍率はこれらを掛けた値）。侵食が高い段階ほど成長バフがかかりますが、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。100に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（侵食の下限が20→40に上がる）。侵食が下がるのは、禁域の月の休息だけです。また侵食60以上のあいだは、学院の結界に反応して強制的に浄化されることがあります（週35%・侵食-5〜45、どれだけ下がるかは読めません）。</p>` : ''}
     <h3 style="margin:18px 0 8px;font-size:15px">習得に挑戦中</h3>
     ${s.pending.length ? `<div class="plist">${s.pending.map(a => `<div>${a.kind === 'passive' ? '特性' : '魔法'}【${a.kind === 'passive' ? PASSIVES[a.id].n : SPELL[a.id].n}】<span>コツLv${a.fails}・現在の成功率${Math.round(attemptRate(s, a) * 100)}%${a.src && CHARS[a.src] ? `・${CHARS[a.src].n}と交流すると再挑戦しやすい` : ''}</span></div>`).join('')}</div>` : '<p class="note">習得に失敗した特性や魔法は、ここに残り、あとで再挑戦できます。失敗するたびに成功しやすくなります。</p>'}
     <h3 style="margin:18px 0 8px;font-size:15px">関係の壁</h3>
