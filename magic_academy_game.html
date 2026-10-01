@@ -2001,6 +2001,7 @@ function this_ex(s) { return SC.exams.find(e => s.turn === e.week - SC.announceW
 SCENARIOS.main = {
   id: 'main', name: '星見の魔法学院', title: '星見の魔法学院', specialName: '夏合宿',
   desc: '三年間、授業・研究・交流・休息を選び、卒業大会の頂点を目指すシナリオ。',
+  lead: '三年間、百四十四の週。授業・研究・交流・休息を選び、卒業大会で頂点を目指す魔法使いを育てよう。出自も習得魔法も、毎回ちがう。',   // タイトル画面の見出しの下に出す紹介文
   weeksPerMonth: 4, months: 36, startMonth: 4,
   // 試験・大会（週・名称・画面の説明文）
   exams: [
@@ -2281,6 +2282,7 @@ function forbiddenEnding(s) {
 }
 SCENARIOS.forbidden = {
   id: 'forbidden', name: '禁術の魔法学院', title: '禁術の魔法学院', specialName: '禁域の月',
+  lead: '三年間、百四十四の週。侵食と引き換えに力を得る禁術儀式で己を鍛え、最後は討伐隊から学院を守り抜こう。暴走の一線を越えるかどうかは、あなた次第。',   // タイトル画面の見出しの下に出す紹介文
   desc: '禁術を学ぶ学院で三年間。侵食と引き換えに力を得る「禁術儀式」で成長し、最後は討伐隊から学院を守り抜く。',
   weeksPerMonth: 4, months: 36, startMonth: 4,
   origins: FORBIDDEN_ORIGINS, chars: FORBIDDEN_CHARS, charStory: FORBIDDEN_CHAR_STORY, starEvents: FORBIDDEN_STAR_EVENTS, groups: FORBIDDEN_GROUPS,
@@ -2499,8 +2501,8 @@ function renderTitle() {
   $('#app').innerHTML = `
   <section class="hero"><div>
     <div class="sky">✦ ✧ ✦</div>
-    <h1>星見の魔法学院</h1>
-    <p class="lead">三年間、百四十四の週。授業・研究・交流・休息を選び、卒業大会で頂点を目指す魔法使いを育てよう。出自も習得魔法も、毎回ちがう。</p>
+    <h1 id="ttl">${esc(SC.title || SC.name)}</h1>
+    <p class="lead" id="lead">${esc(SC.lead || '')}</p>
     <div class="namef">
       <label for="sc" class="note" style="align-self:center">シナリオ</label>
       <select id="sc">${Object.values(SCENARIOS).map(x => `<option value="${esc(x.id)}" ${SC && SC.id === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
@@ -2518,7 +2520,8 @@ function renderTitle() {
   </div></section>`;
   // 選んだシナリオに切り替えてから生徒を作る（週数・試験・イベントはシナリオが決める）
   $('#go').onclick = () => { const n = $('#nm').value.trim() || 'アルト'; setScenario($('#sc').value); SHOWN = null; S = newStudent(n); TURNLOG = []; renderReveal(); };
-  $('#sc').onchange = () => { $('#scdesc').textContent = SCENARIOS[$('#sc').value].desc || ''; document.body.classList.toggle('theme-forbidden', $('#sc').value === 'forbidden'); };
+  // シナリオを選び直したら、見出し・紹介文・説明・配色をそのシナリオのものに替える
+  $('#sc').onchange = () => { const x = SCENARIOS[$('#sc').value]; $('#ttl').textContent = x.title || x.name; $('#lead').textContent = x.lead || ''; $('#scdesc').textContent = x.desc || ''; document.body.classList.toggle('theme-forbidden', $('#sc').value === 'forbidden'); };
   $('#nm').onkeydown = e => { if (e.key === 'Enter') $('#go').click(); };
 }
 
