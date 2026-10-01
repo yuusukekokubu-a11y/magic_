@@ -822,14 +822,43 @@ function has(s, id) { return s.passives.includes(id); }
 // 共通の特性のうち数値で効くものは Lv1〜PASSIVE_LV_MAX を持つ。レベルは s.passiveLv に別で持ち（s.passives はそのまま）、
 // 記録がない特性は Lv1 として扱う（レベル制より前の状態を読み込んでも全特性 Lv1 になる）
 const PASSIVE_LV_MAX = 3;
-// 効果表：特性ごとの効果量を Lv1, Lv2, Lv3 の順に並べる。cap はその特性の上限値
-const PASSIVE_FX = {};
+// 効果表：特性ごと・効果ごとに、処理で使う値を Lv1, Lv2, Lv3 の順に並べる（Lv1 はレベル制より前と同じ値）。
+// 割合で効くものは max（上限）か min（軽減の倍率の下限）を持ち、値はその範囲に収める。
+// 二値の特性（guts・second_wind）と専用特性はここに載せない（レベルは常に Lv1 扱いで、効果は変わらない）
+const PASSIVE_FX = {
+  // 育成特性
+  hard:      { mul:  { v: [1.15, 1.195, 1.24], max: 1.3 } },     // 鍛錬の伸び×
+  tough:     { mul:  { v: [0.75, 0.68, 0.62], min: 0.5 } },      // 鍛錬・研究の疲労×（-25%→-32%→-38%）
+  scholar:   { rare: { v: [0.9, 1.065, 1.23], max: 1.3 } },      // 研究で珍しい魔法が出る重み（持っていないときは0.35）
+  bookworm:  { mul:  { v: [1.2, 1.26, 1.32], max: 1.4 } },       // 研究の進捗×
+  calm_mind: { cut:  { v: [5, 7, 9], max: 15 } },                // 失敗率-（%）
+  charm:     { mul:  { v: [1.5, 1.65, 1.8], max: 2 } },          // 上がる絆×
+  friendly:  { mul:  { v: [1.2, 1.26, 1.32], max: 1.4 } },       // 交流で上がる絆×
+  sleep:     { rest: { v: [15, 20, 24] },                         // 休養の疲労回復+
+               up:   { v: [0.8, 0.875, 0.95], max: 0.95 } },      // 休養で調子が上がる確率（持っていないときは0.55）
+  // 戦闘特性
+  focus:         { acc:  { v: [15, 20, 24] } },                   // 命中+
+  flow:          { ct:   { v: [0.1, 0.13, 0.16], max: 0.2 } },    // CT短縮+
+  sniper:        { crit: { v: [0.1, 0.13, 0.16], max: 0.2 } },    // 会心率+
+  spell_crafter: { crit: { v: [0.08, 0.104, 0.128], max: 0.16 } },// 会心率+
+  adversity:     { mul:  { v: [1.35, 1.455, 1.56], max: 1.7 } },  // 自分のHP30%以下で与ダメージ×
+  finisher:      { mul:  { v: [1.2, 1.26, 1.32], max: 1.4 } },    // 相手のHP30%以下で与ダメージ×
+  wall:          { mul:  { v: [0.9, 0.87, 0.85], min: 0.75 } },   // 被ダメージ×（-10%→-13%→-15%）
+  mana_shell:    { coef: { v: [0.5, 0.65, 0.8], max: 1 },         // バリア＝魔法防御×coef＋flat
+                   flat: { v: [15, 20, 24] } },
+};
+function lvClamp(lv) { return Math.min(PASSIVE_LV_MAX, Math.max(1, Math.floor(lv) || 1)); }
 // 持っていなければ0、持っていればレベル（最低1・最大 PASSIVE_LV_MAX）
-function passiveLv(s, id) {
-  if (!has(s, id)) return 0;
-  const lv = (s.passiveLv || {})[id];
-  return Math.min(PASSIVE_LV_MAX, Math.max(1, Math.floor(lv) || 1));
+function passiveLv(s, id) { return has(s, id) ? lvClamp((s.passiveLv || {})[id]) : 0; }
+// 効果表から、そのレベルの値を上限・下限の範囲に収めて引く
+function fxAt(id, key, lv) {
+  const e = PASSIVE_FX[id][key]; let v = e.v[lvClamp(lv) - 1];
+  if (e.max != null) v = Math.min(e.max, v);
+  if (e.min != null) v = Math.max(e.min, v);
+  return v;
 }
+// 育成特性の効果：持っていればレベルに応じた値、持っていなければ dflt
+function pfx(s, id, key, dflt) { const lv = passiveLv(s, id); return lv ? fxAt(id, key, lv) : dflt; }
 // 戦闘で効く特性：育成特性すべて＋装備中の戦闘特性
 function activePassives(s) { const eq = s.equipPassives || []; return s.passives.filter(p => PASSIVES[p].type !== 'combat' || eq.includes(p)); }
 // 戦闘特性の付け外し。付けられなかったときは理由の文字列を返す
@@ -859,7 +888,7 @@ function fmtGain(obj) {
 }
 
 // ===== 育成コマンド =====
-function failRate(s) { return clamp(Math.max(0, (s.fatigue - 50) * 1.6) + erosionPenalty(s).fail - (has(s, 'calm_mind') ? 5 : 0), 0, 80); }
+function failRate(s) { return clamp(Math.max(0, (s.fatigue - 50) * 1.6) + erosionPenalty(s).fail - pfx(s, 'calm_mind', 'cut', 0), 0, 80); }
 
 // ===== 侵食（禁術の魔法学院のみ。SC.erosion が true のシナリオで使う） =====
 // 0〜100。禁術儀式などプレイヤーの選択でだけ増え、時間経過では増えない。
@@ -1075,14 +1104,14 @@ function doTrain(s, stat) {
   }
   const spc = specialOf(s.turn); const camp = !!(spc && spc.trainMul); const cmul = camp ? spc.trainMul : 1;
   const spread = s.origin === 'commoner' ? [3.2, 3.7] : [2.8, 4.1];   // 週あたりの成長量（月単位版と総量が揃うよう調整）
-  let base = (spread[0] + rnd() * (spread[1] - spread[0])) * (has(s, 'hard') ? 1.15 : 1) * cmul;
+  let base = (spread[0] + rnd() * (spread[1] - spread[0])) * pfx(s, 'hard', 'mul', 1) * cmul;
   const g = {};
   const mul = (k) => (k === 'hp' ? 3 : 1) * s.grow[k] * growMul(s) * affGrow(s, k) * erosionGrowth(s);
   g[stat] = gain(s, stat, base * mul(stat));
   // 副次成長
   const side = { hp: 'def', atk: 'acc', int: 'acc', def: 'hp', acc: 'int' }[stat];
   g[side] = gain(s, side, (0.65 + rnd() * 0.4) * mul(side) * cmul);
-  s.fatigue = clamp(s.fatigue + (camp ? spc.trainFatigue : 22) * (has(s, 'tough') ? 0.75 : 1), 0, 100);
+  s.fatigue = clamp(s.fatigue + (camp ? spc.trainFatigue : 22) * pfx(s, 'tough', 'mul', 1), 0, 100);
   out.lines.push(`${camp ? '【夏合宿】' : ''}${SUBJECT[stat]}の${camp ? '特訓' : '授業'}を受けた。${fmtGain(g)}`);
   out.events = cmdEvents(s, 'train', stat);
   return out;
@@ -1090,7 +1119,7 @@ function doTrain(s, stat) {
 
 // ---- 研究：3つの候補から1つを選ぶ ----
 function researchOffer(s) {
-  const rareW = (has(s, 'scholar') ? 0.9 : 0.35) + (s.origin === 'heir' ? 0.3 : 0) + s.stats.int / 600;
+  const rareW = pfx(s, 'scholar', 'rare', 0.35) + (s.origin === 'heir' ? 0.3 : 0) + s.stats.int / 600;
   const pool = [...COMMON_SPELLS]; const out = [];
   while (out.length < 3 && pool.length) {
     const sp = wpick(pool, x => { const h = s.spells.find(y => y.id === x.id); if (h && h.lv >= 5) return 0.0001; const r = affRole(affOf(s), x.el); return (r === 'main' || r === 'pure' ? AFF.research.main : r === 'sub' ? AFF.research.sub : 1) * (x.rare ? rareW : 1) * (h ? 0.7 : 1); });
@@ -1100,9 +1129,9 @@ function researchOffer(s) {
 }
 function doResearch(s) {
   const out = { kind: 'research', lines: [] };
-  s.fatigue = clamp(s.fatigue + 16 * (has(s, 'tough') ? 0.75 : 1), 0, 100);
+  s.fatigue = clamp(s.fatigue + 16 * pfx(s, 'tough', 'mul', 1), 0, 100);
   if (rnd() * 100 < failRate(s) * 0.8) { s.cond = Math.max(0, s.cond - 1); out.lines.push('研究に集中できず、成果は出なかった…（調子ダウン）'); out.fail = true; out.events = [{ title: '研究が行き詰まった', text: '疲れで集中できず、成果は出なかった…', bad: true }]; return out; }
-  const inc = Math.round((ri(24, 34) + s.stats.int / 15) * (has(s, 'bookworm') ? 1.2 : 1) * erosionGrowth(s));
+  const inc = Math.round((ri(24, 34) + s.stats.int / 15) * pfx(s, 'bookworm', 'mul', 1) * erosionGrowth(s));
   s.research += inc;
   const di = gain(s, 'int', (1 + rnd()) * s.grow.int * growMul(s) * 0.4 * erosionGrowth(s));
   if (s.research >= 100) { s.research -= 100; out.offer = researchOffer(s); }
@@ -1136,7 +1165,7 @@ function bondCap(s, k) {
 }
 function addBond(s, k, v) {
   if (!(k in s.bonds)) return;   // このシナリオにいない人物
-  if (v > 0) v = Math.round(v * (has(s, 'charm') ? 1.5 : 1) * (has(s, 'noble_blood') ? 1.15 : 1));
+  if (v > 0) v = Math.round(v * pfx(s, 'charm', 'mul', 1) * (has(s, 'noble_blood') ? 1.15 : 1));
   s.bonds[k] = clamp(s.bonds[k] + v, 0, Math.min(BOND_MAX, Math.max(bondCap(s, k), s.bonds[k])));
 }
 function statHint(k, v) { return `${STAT_NAME[k]}+${k === 'hp' ? v * 3 : v}`; }
@@ -1388,7 +1417,7 @@ function doSocial(s, cid) {
   const c = CHARS[cid];
   // 交流で上がる絆は控えめ（絆の主な伸びは五星とのランダムイベント）。イベントの人物は交流が主な手段なので多め
   const bFrom = s.bonds[cid];
-  addBond(s, cid, (c.group === 'event' ? ri(4, 6) : ri(3, 4)) * (has(s, 'friendly') ? 1.2 : 1));
+  addBond(s, cid, (c.group === 'event' ? ri(4, 6) : ri(3, 4)) * pfx(s, 'friendly', 'mul', 1));
   const gm = c.gainMul || (c.group === 'event' ? EVENT_GAIN : 1);   // gainMul＝その人物だけの伸び倍率（ヴェインなど）
   const g = {}; for (const k of [c.stat, c.also].filter(Boolean)) g[k] = gain(s, k, (0.8 + rnd() * 0.6) * (k === 'hp' ? 3 : 1) * s.grow[k] * growMul(s) * gm);
   const place = pick(c.where); const line = pick(c.talk);
@@ -1424,9 +1453,9 @@ function doSocial(s, cid) {
 
 function doRest(s) {
   const out = { kind: 'rest', lines: [] };
-  const amt = Math.max(10, 45 + (has(s, 'sleep') ? 15 : 0) - erosionPenalty(s).rest);   // 侵食が高いと休まらない
+  const amt = Math.max(10, 45 + pfx(s, 'sleep', 'rest', 0) - erosionPenalty(s).rest);   // 侵食が高いと休まらない
   s.fatigue = clamp(s.fatigue - amt, 0, 100);
-  const up = rnd() < (has(s, 'sleep') ? 0.8 : 0.55);
+  const up = rnd() < pfx(s, 'sleep', 'up', 0.55);
   if (up) s.cond = Math.min(4, s.cond + 1);
   const sp = specialOf(s.turn); const pur = sp && sp.restPurify ? purify(s, ri(sp.restPurify[0], sp.restPurify[1])) : 0;   // 特別期間は休息で浄化できる
   out.lines.push(`しっかり休んだ。疲労-${amt}${up ? '・調子アップ' : ''}${pur ? `・侵食-${pur}` : ''}`);
@@ -1745,8 +1774,9 @@ function equipSyn(s) { return synergyOf(affOf(s), s.equip.map(id => SPELL[id].el
 function spellStats(s, entry, enemyDef) {
   const sp = entry.id === 'basic' ? BASIC : SPELL[entry.id]; const lv = entry.lv || 1;
   const syn = equipSyn(s); const act = activePassives(s); const P = (id) => act.includes(id);
+  const PV = (id, key, dflt) => P(id) ? fxAt(id, key, passiveLv(s, id)) : dflt;
   const lvMul = spellLvMul(lv);
-  const ctRed = Math.min(0.3, s.stats.int / 800) + (P('flow') ? 0.1 : 0);
+  const ctRed = Math.min(0.3, s.stats.int / 800) + PV('flow', 'ct', 0);
   const ct = Math.max(1, Math.round((sp.ct - (lv >= 3 ? 1 : 0)) * (1 - ctRed)));
   const potMul = lvMul * (P('heir_blood') ? 1.12 : 1) * (P('seal_ord') ? 1.1 : 1) * (P('blaze_heart') && sp.el === 'fire' ? 1.15 : 1) * affPower(affOf(s), sp.el);
   const def = s.stats.def;
@@ -1782,12 +1812,14 @@ function nextEnemyDef(turn) { return SC.nextEnemyDef(monthIdx(turn)); }
 
 
 // ===== 戦闘 =====
-function makeFighter(name, stats, spells, equip, passives, el, aff) {
+// lvs：特性のレベル（{ 特性id: Lv }）。省略したとき・載っていない特性は Lv1
+function makeFighter(name, stats, spells, equip, passives, el, aff, lvs) {
   stats = Object.fromEntries(Object.entries(stats).map(([k, v]) => [k, Math.round(v)]));
   const eqSp = equip.map(id => { const sp = spells.find(x => x.id === id); return { ...SPELL[id], lv: sp ? sp.lv : 1 }; });
   const syn = synergyOf(aff, eqSp.map(x => x.el));
   const P = (id) => passives.includes(id);
-  let ctRed = Math.min(0.3, stats.int / 800) + (P('flow') ? 0.1 : 0);
+  const PV = (id, key, dflt) => P(id) ? fxAt(id, key, (lvs || {})[id]) : dflt;   // 効果表の値（持っていなければ dflt）
+  let ctRed = Math.min(0.3, stats.int / 800) + PV('flow', 'ct', 0);
   const slotsArr = [...eqSp, BASIC].map(sp => {
     const lvMul = spellLvMul(sp.lv || 1);
     const ct = Math.max(1, Math.round((sp.ct - ((sp.lv || 1) >= 3 ? 1 : 0)) * (1 - ctRed)));
@@ -1795,12 +1827,12 @@ function makeFighter(name, stats, spells, equip, passives, el, aff) {
   });
   const mhp = Math.round(stats.hp * (P('bulwark') ? 1.15 : 1) * (P('seal_garde') ? 1.1 : 1));
   return { name, el, aff, base: { ...stats }, maxHp: mhp, hp: mhp, shield: 0, slots: slotsArr, syn, passives,
-    buffs: [], burn: 0, burnT: 0, healCount: 0, gutsUsed: false, windUsed: false, P };
+    buffs: [], burn: 0, burnT: 0, healCount: 0, gutsUsed: false, windUsed: false, P, PV };
 }
 
 function eff(f, k) {
   let v = f.base[k];
-  if (k === 'acc') { if (f.P('focus')) v += 15; if (f.syn.includes('water')) v += 10; if (f.P('seal_luka')) v += 12; }
+  if (k === 'acc') { v += f.PV('focus', 'acc', 0); if (f.syn.includes('water')) v += 10; if (f.P('seal_luka')) v += 12; }
   if (k === 'atk' && f.P('seal_celia')) v *= 1.1;
   if (k === 'def' && f.P('seal_garde')) v *= 1.1;
   for (const b of f.buffs) {
@@ -1816,7 +1848,7 @@ function battle(A, B, maxT = 80) {
   const push = (e) => log.push({ ...e, hA: Math.max(0, Math.round(A.hp)), hB: Math.max(0, Math.round(B.hp)), sA: Math.round(A.shield), sB: Math.round(B.shield) });
   for (const f of [A, B]) if (f.intro) push({ t: 0, who: f.name, text: f.intro, kind: 'buff' });
   for (const f of [A, B]) if (f.P('intel')) { const o = f === A ? B : A; o.slots.forEach(x => x.cd += 1); push({ t: 0, who: f.name, text: `${f.name}の情報戦！ ${o.name}の詠唱が遅れる（CT+1）`, kind: 'debuff' }); }
-  for (const f of [A, B]) if (f.P('mana_shell')) { f.shield = Math.round(eff(f, 'def') * 0.5 + 15); push({ t: 0, who: f.name, text: `${f.name}の魔力障壁！ ${f.shield}のバリアを張った`, kind: 'buff' }); }
+  for (const f of [A, B]) if (f.P('mana_shell')) { f.shield = Math.round(eff(f, 'def') * f.PV('mana_shell', 'coef') + f.PV('mana_shell', 'flat')); push({ t: 0, who: f.name, text: `${f.name}の魔力障壁！ ${f.shield}のバリアを張った`, kind: 'buff' }); }
   for (let t = 1; t <= maxT; t++) {
     // 精度が高い方が先に動く。同値ならランダム（以前は常に A＝プレイヤーが先で、同値の対戦に偏りがあった）
     const ea = eff(A, 'acc'), eb = eff(B, 'acc');
@@ -1878,14 +1910,14 @@ function cast(me, op, slot, t, push) {
       const varW = Math.max(4, 20 - eff(me, 'acc') / 10) / 100;
       atk *= 1 + (rnd() * 2 - 1) * varW;
       if (me.syn.includes('fire')) atk *= 1.10;
-      if (me.P('adversity') && me.hp < me.maxHp * 0.3) atk *= 1.35;
+      if (me.P('adversity') && me.hp < me.maxHp * 0.3) atk *= me.PV('adversity', 'mul');
       if (me.P('orphan_soul') && me.hp < me.maxHp * 0.5) atk *= 1.25;
-      if (me.P('finisher') && op.hp < op.maxHp * 0.3) atk *= 1.2;
+      if (me.P('finisher') && op.hp < op.maxHp * 0.3) atk *= me.PV('finisher', 'mul');
       if (me.P('abyss_fury')) atk *= 1 + 0.3 * (1 - Math.max(0, me.hp) / me.maxHp);   // 背水：残りHPが減るほど強くなる
-      const critR = 0.05 + eff(me, 'acc') / 2000 + (sp.crit || 0) + (me.syn.includes('dark') ? 0.1 : 0) + (me.P('sniper') ? 0.1 : 0) + (me.P('noir_bless') ? 0.08 : 0) + (me.P('seal_luka') ? 0.05 : 0) + (me.P('blaze_heart') ? 0.05 : 0) + (me.P('spell_crafter') ? 0.08 : 0);
+      const critR = 0.05 + eff(me, 'acc') / 2000 + (sp.crit || 0) + (me.syn.includes('dark') ? 0.1 : 0) + me.PV('sniper', 'crit', 0) + (me.P('noir_bless') ? 0.08 : 0) + (me.P('seal_luka') ? 0.05 : 0) + (me.P('blaze_heart') ? 0.05 : 0) + me.PV('spell_crafter', 'crit', 0);
       if (rnd() < critR) { atk *= 1.8; crits++; }
       let dmg = atk * (sp.pierce ? 1 : 100 / (100 + eff(op, 'def') * (1 - (sp.defIgnore || 0)))) * matchMul(sp.el, op, sp.anti);
-      if (op.P('wall')) dmg *= 0.9;
+      if (op.P('wall')) dmg *= op.PV('wall', 'mul');
       if (op.P('noble_blood')) dmg *= 0.92;
       if (op.P('noir_bless')) dmg *= 0.95;
       if (op.P('orphan_soul') && op.hp < op.maxHp * 0.5) dmg *= 0.85;
@@ -1943,7 +1975,7 @@ function makeOpponent(key, over) {
 }
 // key を渡すと、そのラウンドがパートナーの声援の対象か判定する（シナリオの partnerCheer）
 function playerFighter(s, key) {
-  const f = makeFighter(s.name, s.stats, s.spells, s.equip, activePassives(s), s.affinity[0], affOf(s));   // 装備していない戦闘特性は効かない
+  const f = makeFighter(s.name, s.stats, s.spells, s.equip, activePassives(s), s.affinity[0], affOf(s), s.passiveLv);   // 装備していない戦闘特性は効かない
   const pc = SC.partnerCheer;
   if (s.partner && key && pc && pc.rounds.includes(key)) {
     f.buffs.push({ stat: 'atk', val: pc.atk, dur: 9999, src: 'cheer' });
@@ -2372,7 +2404,7 @@ function setScenario(id) {
 }
 setScenario('main');
 
-if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, COMMON_SPELLS, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, ritualDraws, forbiddenEnding, addErosion, getErosionMul, BARRIER, barrierDue, EROSION_BASE_GROW, purify, erosionLimit, ritualBonus, erosionTier, erosionGrowth, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, activePassives, togglePassive, PASSIVE_SLOTS, PASSIVE_LV_MAX, PASSIVE_FX, passiveLv, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
+if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, COMMON_SPELLS, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, ritualDraws, forbiddenEnding, addErosion, getErosionMul, BARRIER, barrierDue, EROSION_BASE_GROW, purify, erosionLimit, ritualBonus, erosionTier, erosionGrowth, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, activePassives, togglePassive, PASSIVE_SLOTS, PASSIVE_LV_MAX, PASSIVE_FX, passiveLv, fxAt, pfx, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
 
 </script>
 <script>
