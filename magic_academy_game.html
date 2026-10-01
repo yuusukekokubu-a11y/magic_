@@ -900,8 +900,8 @@ const EROSION_BASE_GROW = 0.7;
 const EROSION_TIERS = [   // min 以上で適用（上の段階ほど、儀式の報酬もペナルティも大きい）
   { min: 0, n: '平静', grow: 1.0, ritual: 1.0, rest: 0, fail: 0 },
   { min: 30, n: '揺らぎ', grow: 1.0, ritual: 1.15, rest: 8, fail: 5 },
-  { min: 60, n: '蝕み', grow: 1.05, ritual: 1.4, rest: 16, fail: 10 },
-  { min: 90, n: '深淵の淵', grow: 1.25, ritual: 1.9, rest: 16, fail: 10 },   // 儀式の見返りが最大。撃つたびに暴走ラインが近づく
+  { min: 60, n: '蝕み', grow: 1.0, ritual: 1.25, rest: 16, fail: 10 },
+  { min: 90, n: '深淵の淵', grow: 1.15, ritual: 1.5, rest: 16, fail: 10 },   // 儀式の見返りが最大。撃つたびに暴走ラインが近づく
 ];
 // 儀式の報酬（能力上昇）の倍率：撃った時点の侵食の段階で決まる
 function ritualBonus(s) { const x = erosionTier(s); return x ? x.ritual : 1; }
