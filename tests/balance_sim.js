@@ -1,8 +1,8 @@
 // バランス確認：決まった乱数でシナリオごとに同じ行動方針を回し、試験・最終戦の勝率と能力の伸びを出す。
 // 乱数を固定しているので、ロジックが同じなら出力は毎回まったく同じになる（最後の行のハッシュで比べられる）。
-// 使い方: node tests/balance_sim.js [1方針あたりの人数（既定200）]
+// 使い方: node tests/balance_sim.js [1方針あたりの人数（既定200）] [乱数の種（既定20261001）]
 const loadCore = require('./load_core');
-const G = loadCore(20261001);
+const G = loadCore(+process.argv[3] || 20261001);
 const N = +process.argv[2] || 200;
 const tot = s => s.stats.hp / 3 + s.stats.atk + s.stats.int + s.stats.def + s.stats.acc;
 function run(scn, target) {
