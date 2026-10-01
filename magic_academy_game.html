@@ -775,7 +775,7 @@ function newStudent(name, forceOrigin) {
   const oid = forceOrigin || wpick(Object.keys(ORIGINS), k => ORIGINS[k].p).toString();
   const o = ORIGINS[oid];
   const s = { name, origin: oid, stats: {}, grow: {}, fatigue: 0, cond: 2, turn: 1,
-    spells: [], equip: [], passives: [], equipPassives: [], partner: null, sub: null, absent: {}, research: 0, bonds: Object.fromEntries(Object.keys(CHARS).map(k => [k, 0])), pending: [],
+    spells: [], equip: [], passives: [], passiveLv: {}, equipPassives: [], partner: null, sub: null, absent: {}, research: 0, bonds: Object.fromEntries(Object.keys(CHARS).map(k => [k, 0])), pending: [],
     flags: {}, talents: [], results: {}, log: [] };
   for (const k of STATS) s.stats[k] = Math.round(o.init[k] * (0.92 + rnd() * 0.16));
   if (oid === 'orphan') {
@@ -818,6 +818,18 @@ function addPassive(s, id) {
   return true;
 }
 function has(s, id) { return s.passives.includes(id); }
+// ---- 特性のレベル ----
+// 共通の特性のうち数値で効くものは Lv1〜PASSIVE_LV_MAX を持つ。レベルは s.passiveLv に別で持ち（s.passives はそのまま）、
+// 記録がない特性は Lv1 として扱う（レベル制より前の状態を読み込んでも全特性 Lv1 になる）
+const PASSIVE_LV_MAX = 3;
+// 効果表：特性ごとの効果量を Lv1, Lv2, Lv3 の順に並べる。cap はその特性の上限値
+const PASSIVE_FX = {};
+// 持っていなければ0、持っていればレベル（最低1・最大 PASSIVE_LV_MAX）
+function passiveLv(s, id) {
+  if (!has(s, id)) return 0;
+  const lv = (s.passiveLv || {})[id];
+  return Math.min(PASSIVE_LV_MAX, Math.max(1, Math.floor(lv) || 1));
+}
 // 戦闘で効く特性：育成特性すべて＋装備中の戦闘特性
 function activePassives(s) { const eq = s.equipPassives || []; return s.passives.filter(p => PASSIVES[p].type !== 'combat' || eq.includes(p)); }
 // 戦闘特性の付け外し。付けられなかったときは理由の文字列を返す
@@ -2360,7 +2372,7 @@ function setScenario(id) {
 }
 setScenario('main');
 
-if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, COMMON_SPELLS, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, ritualDraws, forbiddenEnding, addErosion, getErosionMul, BARRIER, barrierDue, EROSION_BASE_GROW, purify, erosionLimit, ritualBonus, erosionTier, erosionGrowth, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, activePassives, togglePassive, PASSIVE_SLOTS, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
+if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, COMMON_SPELLS, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, ritualDraws, forbiddenEnding, addErosion, getErosionMul, BARRIER, barrierDue, EROSION_BASE_GROW, purify, erosionLimit, ritualBonus, erosionTier, erosionGrowth, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, activePassives, togglePassive, PASSIVE_SLOTS, PASSIVE_LV_MAX, PASSIVE_FX, passiveLv, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
 
 </script>
 <script>
