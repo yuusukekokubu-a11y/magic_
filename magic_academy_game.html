@@ -908,13 +908,16 @@ function runawayCheck(s) {
   return [{ title: '暴走', text: `侵食が限界を超え、魔力が暴走した――。\n全能力が大きく下がった。${lines.join('')}\nマイナス特性【${PASSIVES[now].n}】が刻まれ、これからは侵食${erosionLimit(s)}で暴走するようになった。`, bad: true, big: true, passive: now }];
 }
 // ---- 禁術儀式：侵食と引き換えに、能力・魔法・特性をランダムに得る ----
-// 小儀式（堅実な欲）と大儀式（深淵の誘惑）の2種類。特別期間（ritualMul）中は、どちらも報酬も侵食の増え方も2倍
+// 小儀式（堅実な欲）と大儀式（深淵の誘惑）の2種類。特別期間中は、侵食の増え方が ritualMul 倍、報酬の抽選が ritualDraws 回になる（禁域の月は侵食2倍・抽選4回）
 const RITUALS = {
   // stat＝能力上昇1回分の基礎値、statN＝能力上昇の回数（大儀式はこれに魔法か特性の確定枠が付く）
   small: { n: '小儀式', sub: '堅実な欲', fatigue: 8, erosion: [4, 7], failErosion: [2, 4], stat: [3, 6], statN: 1 },
   big: { n: '大儀式', sub: '深淵の誘惑', fatigue: 15, erosion: [15, 45], failErosion: [10, 14], stat: [7, 10], statN: 1 },   // 侵食の幅は厚め（深淵の淵へは暴走のリスクを取って入る）
 };
+// 侵食の増え方の倍率（特別期間の ritualMul。通常は1）
 function ritualMul(s) { const sp = specialOf(s.turn); return sp && sp.ritualMul ? sp.ritualMul : 1; }
+// 報酬の抽選回数（特別期間の ritualDraws。通常は1）
+function ritualDraws(s) { const sp = specialOf(s.turn); return sp && sp.ritualDraws ? sp.ritualDraws : 1; }
 function ritualStat(s, lo, hi, bonus) {
   const k = pick(STATS); const d = gain(s, k, ri(lo, hi) * (bonus || 1) * (k === 'hp' ? 3 : 1) * s.grow[k] * growMul(s));
   return { text: `${STAT_NAME[k]}+${d}` };
@@ -941,8 +944,9 @@ function ritualReward(s, kind, bonus) {
   return [rnd() < 0.8 ? ritualStat(s, R.stat[0], R.stat[1], bonus) : ritualSpell(s)];
 }
 function doRitual(s, kind) {
-  const R = RITUALS[kind] || RITUALS.small; const m = ritualMul(s);
+  const R = RITUALS[kind] || RITUALS.small; const m = ritualMul(s); const draws = ritualDraws(s);
   const out = { kind: 'ritual', lines: [], events: [], ritual: R.n };
+  const start = snap(s);   // まとめのポップアップ用（儀式の前）
   s.fatigue = clamp(s.fatigue + R.fatigue, 0, 100);
   if (rnd() * 100 < failRate(s)) {
     const e = addErosion(s, ri(R.failErosion[0], R.failErosion[1]) * m, 'ritual'); s.cond = Math.max(0, s.cond - 1);
@@ -950,11 +954,26 @@ function doRitual(s, kind) {
     out.events.push({ title: `${R.n}の失敗`, text: `術式が崩れ、闇だけが体に残った。侵食+${e}`, bad: true });
     out.events.push(...runawayCheck(s)); return out;
   }
-  const bonus = ritualBonus(s);   // 侵食が増える前の段階で報酬の倍率を決める
+  const bonus = ritualBonus(s);   // 侵食が増える前の段階で報酬の倍率を決める（全部の抽選で同じ倍率）
   const e = addErosion(s, ri(R.erosion[0], R.erosion[1]) * m, 'ritual');
-  const got = []; for (let i = 0; i < m; i++) got.push(...ritualReward(s, kind, bonus));
-  out.lines.push(`${R.n}を行った。${got.map(g => g.text).join('・')}（侵食+${e}）`);
-  out.events.push({ title: `${R.n}${m > 1 ? '（禁域の月・2倍）' : ''}`, text: `${kind === 'big' ? '深淵の扉が開き、おびただしい力が流れ込んでくる――。' : '小さな魔法陣が闇色に灯り、力が流れ込んでくる――。'}\n${got.map(g => g.text).join('\n')}\n侵食+${e}${bonus > 1 ? `（侵食の段階により能力上昇×${bonus}）` : ''}`, spell: (got.find(g => g.spell) || {}).spell, passive: (got.find(g => g.passive) || {}).passive, big: kind === 'big' });
+  const intro = kind === 'big' ? '深淵の扉が開き、おびただしい力が流れ込んでくる――。' : '小さな魔法陣が闇色に灯り、力が流れ込んでくる――。';
+  const bonusTxt = bonus > 1 ? `（侵食の段階により能力上昇×${bonus}）` : '';
+  // 抽選ごとに、その回で増えた分だけの差分を取っておく
+  const rolls = [];
+  for (let i = 0; i < draws; i++) { const b = snap(s); const got = ritualReward(s, kind, bonus); rolls.push({ got, diff: diffSnap(b, snap(s)) }); }
+  const all = rolls.flatMap(r => r.got);
+  out.lines.push(`${R.n}を行った${draws > 1 ? `（${SC.specialName || '特別期間'}・抽選${draws}回）` : ''}。${all.map(g => g.text).join('・')}（侵食+${e}）`);
+  if (draws === 1) {
+    out.events.push({ title: R.n, text: `${intro}\n${all.map(g => g.text).join('\n')}\n侵食+${e}${bonusTxt}`, spell: (all.find(g => g.spell) || {}).spell, passive: (all.find(g => g.passive) || {}).passive, big: kind === 'big' });
+  } else {
+    // 特別期間：抽選1回ごとにポップアップを分け、最後に全体のまとめ（暴走の判定はそのあと）
+    rolls.forEach((r, i) => {
+      const hit = r.got.find(g => g.spell || g.passive) || {};
+      out.events.push({ title: `${R.n}（${SC.specialName || '特別期間'}） ${i + 1}/${draws}`, text: `${i === 0 ? intro + '\n' : ''}${r.got.map(g => g.text).join('\n')}${bonusTxt ? '\n' + bonusTxt : ''}`,
+        spell: hit.spell, passive: hit.passive, big: !!(hit.spell || hit.passive), diff: r.diff });
+    });
+    out.events.push({ title: `${R.n}（${SC.specialName || '特別期間'}） 結果まとめ`, text: `${draws}回の抽選で得たもの：\n${all.map(g => g.text).join('\n')}\n侵食+${e}`, diff: diffSnap(start, snap(s)) });
+  }
   out.events.push(...runawayCheck(s));
   return out;
 }
@@ -2278,8 +2297,8 @@ SCENARIOS.forbidden = {
   cupSub(s, idx, n) { return `${s.results.sel ? '先遣隊は免除' : '第1波から'}　第${idx + 1}波 / 全${n}波（HPは波ごとに全快）`; },
   cupWinText: '防衛成功！', cupNextText: '次の波へ', endText: '決着の日へ',
   summary(s) { const reach = s.results.champion ? '防衛成功' : this.reachName[s.results.cupReached]; return `実戦演習 ${s.results.mid ? '突破' : '敗北'}／審問官迎撃 ${s.results.sel ? '撃退' : '敗北'}／防衛戦 ${reach}`; },
-  // 各年の8月は「禁域の月」：休息で侵食が下がり、禁術儀式は報酬も侵食も2倍
-  special(t) { return (monthIdx(t) - 1) % 12 === 4 ? { id: 'rite', name: '禁域の月', ritualMul: 2, restPurify: [10, 16], note: '禁域の月：休息で侵食が下がる・禁術儀式は報酬も侵食も2倍' } : null; },
+  // 各年の8月は「禁域の月」：休息で侵食が下がり、禁術儀式は報酬の抽選が4回（侵食の増え方は2倍）
+  special(t) { return (monthIdx(t) - 1) % 12 === 4 ? { id: 'rite', name: '禁域の月', ritualMul: 2, ritualDraws: 4, restPurify: [10, 16], note: '禁域の月：休息で侵食が下がる・禁術儀式は報酬の抽選4回（侵食は2倍）' } : null; },
   // 対戦相手：能力は本編と同じ（据え置き）。夏合宿がない分は、異端の教師ヴェインと禁術儀式で補う。審問官・討伐隊は光が多い
   opponents: {
     mid: { ...SCENARIOS.main.opponents.mid },
@@ -2310,7 +2329,7 @@ SCENARIOS.forbidden = {
     riteStart: { desc: '禁域の月の始まり', run(s, c) {
       const sp = specialOf(s.turn);
       if (!sp || sp.id !== 'rite' || weekOf(s.turn) !== 1) return;
-      c.L.push({ title: `${Math.ceil(c.t / 12)}年目 禁域の月`, kicker: '特別期間', text: '学院の結界が弱まり、禁域の扉が開く4週間が始まった。\nこの間だけ、休息で侵食を鎮められる。禁術儀式は報酬も侵食も2倍になる。' });
+      c.L.push({ title: `${Math.ceil(c.t / 12)}年目 禁域の月`, kicker: '特別期間', text: '学院の結界が弱まり、禁域の扉が開く4週間が始まった。\nこの間だけ、休息で侵食を鎮められる。禁術儀式は報酬の抽選が4回になる（侵食の増え方は2倍）。' });
     } },
     // 護法印の共鳴：月の変わり目に、学院の結界が定期的に働いて強制的に浄化される（選択肢なし・回避できない）
     barrier: { desc: '浄化の定期イベント（2か月ごとの月の変わり目・侵食-5〜50）', run(s, c) {
@@ -2339,7 +2358,7 @@ function setScenario(id) {
 }
 setScenario('main');
 
-if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, COMMON_SPELLS, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, forbiddenEnding, addErosion, getErosionMul, BARRIER, barrierDue, EROSION_BASE_GROW, purify, erosionLimit, ritualBonus, erosionTier, erosionGrowth, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, activePassives, togglePassive, PASSIVE_SLOTS, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
+if (typeof module !== 'undefined') module.exports = { RNG, STATS, SPELLS, SPELL, COMMON_SPELLS, get ORIGINS() { return ORIGINS; }, newStudent, chooseAffinity, doTrain, doResearch, doSocial, doRest, doRitual, RITUALS, ritualMul, ritualDraws, forbiddenEnding, addErosion, getErosionMul, BARRIER, barrierDue, EROSION_BASE_GROW, purify, erosionLimit, ritualBonus, erosionTier, erosionGrowth, erosionPenalty, runawayCheck, EROSION_TIERS, failRate, turnEvents, slots, makeOpponent, playerFighter, oppFighter, makeFighter, ELEM, spellStats, spellLevelRow, spellLvMul, SPELL_LV_MAX, snap, diffSnap, resolveChoice, learnChoice, researchOffer, attemptRate, hintOf, BEATS, MATCH, matchMul, matchupInfo, getOpponent, recommendEquip, finalCandidates, setFinalOpponent, ELEMS, AFF, ELEM_STAT, affOf, affRole, affPower, synNeed, synergyOf, socialTargets, rollAvailability, canPartner, isUnlocked, isGraduated, gradLeft, GRAD_WARN, PASSIVES, milestoneEvents, milestoneDue, BOND_MAX, bondMaxed, NEED, needFor, statReady, lockInfo, gateInfo, bondCap, isQuiet, get STAR_EVENTS() { return STAR_EVENTS; }, starEvent, get GROUPS() { return GROUPS; }, EVENT_GAIN, bondNext, get CHAR_STORY() { return CHAR_STORY; }, applyFx, fxHint, get CHARS() { return CHARS; }, NOIR, cmdEvents, get WPM() { return WPM; }, get TOTAL() { return TOTAL; }, get EXAM_WEEK() { return EXAM_WEEK; }, get SC() { return SC; }, monthIdx, weekOf, isCamp, battle, grade, finalRank, roundName, setScenario, SCENARIOS, EVENTS, specialOf, addPassive, activePassives, togglePassive, PASSIVE_SLOTS, examReward, cupRounds, gain, COMMON_PASSIVES, pick, ri };
 
 </script>
 <script>
@@ -2533,7 +2552,9 @@ function startTurn() {
 function processEvents(list, kicker, done) {
   if (!list.length) { done(); return; }
   const [e, ...rest] = list; const next = () => processEvents(rest, kicker, done);
-  if (!e.choices) { showPopups([{ ...e, kicker }], next); return; }
+  // 選択肢のない出来事が続くときは、まとめて渡して「あと○件」「次へ」で順に見せる
+  if (!e.choices) { const n = list.findIndex(x => x.choices); const run = n < 0 ? list : list.slice(0, n);
+    showPopups(run.map(x => ({ ...x, kicker: x.kicker || kicker })), () => processEvents(list.slice(run.length), kicker, done)); return; }
   openModal(`<div class="pop ${e.big ? 'big' : ''}"><div class="kicker">${kicker}${rest.length ? `（このあと${rest.length}件）` : ''}</div>${e.char ? speaker(e.char) : ''}
     <h2>${esc(e.title)}</h2><p class="txt">${esc(e.text)}</p>
     <div class="choices">${e.choices.map((c, i) => `<button class="choice" data-ch="${i}"><span class="cl">${esc(c.label)}</span><span class="ch">${esc(hintOf(S, c))}</span></button>`).join('')}</div></div>`);
@@ -2653,7 +2674,7 @@ function render() {
           <button data-cmd="research">研究<small>${s.research >= 100 ? '次の研究で成果！' : '進捗 ' + s.research + '%'}</small><span class="prog"><span style="width:${Math.min(100, s.research)}%"></span></span></button>
           <button data-cmd="social">交流<small>今週会える：${socialTargets(s).length}人${(() => { const n = socialTargets(s).filter(k => milestoneDue(s, k)).length; return n ? `・✨節目${n}人` : ''; })()}</small></button>
           <button data-cmd="rest">休息<small>疲労回復${specialOf(t) && specialOf(t).restPurify ? '・侵食↓' : ''}</small></button>
-          ${SC.ritual ? Object.entries(RITUALS).map(([k, R]) => `<button data-cmd="ritual_${k}" class="ritual ${k}">${R.n}<small>${R.sub}・疲労+${R.fatigue}・侵食+${Math.round(R.erosion[0] * ritualMul(s) * getErosionMul(s, true))}〜${Math.round(R.erosion[1] * ritualMul(s) * getErosionMul(s, true))}${ritualMul(s) > 1 ? '・報酬2倍' : ''}</small></button>`).join('') : ''}
+          ${SC.ritual ? Object.entries(RITUALS).map(([k, R]) => `<button data-cmd="ritual_${k}" class="ritual ${k}">${R.n}<small>${R.sub}・疲労+${R.fatigue}・侵食+${Math.round(R.erosion[0] * ritualMul(s) * getErosionMul(s, true))}〜${Math.round(R.erosion[1] * ritualMul(s) * getErosionMul(s, true))}${ritualDraws(s) > 1 ? `・報酬${ritualDraws(s)}回` : ''}</small></button>`).join('') : ''}
         </div>
         <div class="risk ${fr >= 20 ? 'hot' : ''}">${fr > 0 ? `授業の失敗率 ${Math.round(fr)}%。休息を検討しましょう。` : '体調は万全。失敗の心配はありません。'}</div>
       </div>
