@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>星見の魔法学院 ― 三年間の育成記録</title>
+<title>学院魔導録 ― 三年間の育成記録</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
@@ -310,7 +310,7 @@ details summary{ cursor:pointer; color:var(--ink); }
 .chip{ font-size:13px; font-weight:700; padding:1px 9px; border-radius:99px; }
 .chip.up{ color:var(--ok); background:color-mix(in srgb,var(--ok) 14%,transparent); }
 .chip.down{ color:var(--danger); background:color-mix(in srgb,var(--danger) 14%,transparent); }
-/* ---- 禁術の学院：闇の配色（body.theme-forbidden。明暗テーマの切替より優先） ---- */
+/* ---- 禁術の魔法学院：闇の配色（body.theme-forbidden。明暗テーマの切替より優先） ---- */
 body.theme-forbidden{
   --bg:#1a1025; --panel:#231634; --panel2:#2c1c41; --ink:#eadcf7; --muted:#a893c4; --line:#46305f;
   --brass:#b97cf0; --brass-soft:#3a2452; --danger:#ff6f7d; --ok:#7fd6a6; --star:#d9a8ff; --shadow:0 0 0 1px rgba(185,124,240,.08), 0 6px 24px rgba(0,0,0,.45);
@@ -338,7 +338,7 @@ body.theme-forbidden .ov.show{ background:rgba(8,3,14,.72); }
 <div class="ov" id="ov"><div class="modal" id="modal" role="dialog" aria-modal="true"></div></div>
 <script>
 // =====================================================================
-//  星見の魔法学院 ― ゲームロジック（UIに依存しない部分）
+//  学院魔導録 ― ゲームロジック（UIに依存しない部分）
 // ---------------------------------------------------------------------
 //  このファイルは画面を一切触らない。ブラウザでも Node.js でも動くので、
 //  tests/ 以下の自動テスト・バランス検証から直接 require できる。
@@ -356,7 +356,7 @@ body.theme-forbidden .ov.show{ background:rgba(8,3,14,.72); }
 //    魔法の性能計算 ......... 画面表示用（戦闘と同じ式）
 //    戦闘 ................... CT制オートバトル（battle）、相性 matchMul
 //    対戦相手 ............... makeOpponent / getOpponent（告知済みの相手） / recommendEquip
-//    シナリオ ............... SCENARIOS.main（本編）と setScenario
+//    シナリオ ............... SCENARIOS.main（星見）と setScenario
 //
 //  状態オブジェクト s（生徒）の主な項目
 //    stats{hp,atk,int,def,acc} 内部は小数・表示は四捨五入
@@ -457,7 +457,7 @@ const SPELLS = [
   { id: 'f6', el: 'fire', n: '蒼炎の術', ct: 3, t: 'dmg', pow: 1.05, anti: 1 },
   { id: 'w6', el: 'water', n: '泥重流', ct: 3, t: 'dmg', pow: 1.1, anti: 1 },
   { id: 'g6', el: 'wood', n: '吸熱の茨', ct: 3, t: 'dmg', pow: 1.0, anti: 1 },
-  // 禁術魔法（forbidden）：禁術の学院の大儀式とヴェインの伝授でだけ手に入る。研究・対戦相手・初期魔法には出ない
+  // 禁術魔法（forbidden）：禁術の魔法学院の大儀式とヴェインの伝授でだけ手に入る。研究・対戦相手・初期魔法には出ない
   //   hpCost＝撃つたびに最大HPのその割合を自傷 / initCt＝戦闘開始からそのtick数が過ぎるまで撃てない / pierce＝相手の魔法防御を無視
   { id: 'x1', el: 'fire', n: '血盟の業火', ct: 3, t: 'dmg', pow: 1.9, hpCost: 0.1, forbidden: 1 },
   { id: 'x2', el: 'dark', n: '奈落の審判', ct: 9, t: 'dmg', pow: 3.2, initCt: 4, pierce: 1, forbidden: 1 },
@@ -566,7 +566,7 @@ const PASSIVES = {
   noble_blood: { type: 'growth', n: '高貴なる血統', d: '被ダメージ-8%、絆の上昇+15%', u: 1 },
   orphan_soul: { type: 'combat', n: '逆境の魂', d: 'HP50%以下で与ダメ+25%・被ダメ-15%', u: 1 },
   heir_blood: { type: 'combat', n: '大魔導の血', d: '全魔法の威力+12%', u: 1 },
-  // 禁術の学院：盟友候補の特性と、暴走で刻まれるマイナス特性（neg）
+  // 禁術の魔法学院：盟友候補の特性と、暴走で刻まれるマイナス特性（neg）
   abyss_fury: { type: 'combat', n: '深淵の昂り', d: '残りHPが低いほど与ダメージ上昇（最大+30%）。自傷する魔法と相性がいい' },
   abyss_temper: { type: 'growth', n: '闇への耐性', d: '侵食による段階ペナルティを半減' },
   rite_ward: { type: 'growth', n: '儀式の護符', d: '禁術儀式での侵食の上昇-40%' },
@@ -789,7 +789,7 @@ function newStudent(name, forceOrigin) {
   const firstPool = COMMON_SPELLS.filter(x => s.affinity.includes(x.el) && !x.rare && x.t === 'dmg');
   addSpell(s, pick(firstPool).id);
   if (oid === 'noble') addSpell(s, pick(COMMON_SPELLS.filter(x => !x.rare && !s.spells.find(y => y.id === x.id))).id);
-  if (SC.erosion) s.erosion = o.erosion || 0;   // 侵食（禁術の学院のみ）
+  if (SC.erosion) s.erosion = o.erosion || 0;   // 侵食（禁術の魔法学院のみ）
   return s;
 }
 // 主適性を選び直す（適性を選べるシナリオの入学時）。初期魔法も新しい適性のものに替える
@@ -832,7 +832,7 @@ function togglePassive(s, id) {
 
 // 主適性に対応するステータスの授業成長補正
 function affGrow(s, k) { let w = 0; for (const e of s.affinity) w += (ELEM_STAT[e][k] || 0); return 1 + AFF.grow * w; }
-// SC.growMul＝シナリオ全体の成長倍率（授業・研究・交流・儀式などの能力の伸びすべてに掛かる。本編は1）
+// SC.growMul＝シナリオ全体の成長倍率（授業・研究・交流・儀式などの能力の伸びすべてに掛かる。星見は1）
 function growMul(s) { return COND_MUL[s.cond] * (has(s, 'commoner_grit') ? 1.1 : 1) * (SC.growMul || 1); }
 // ステータスを増減する。内部は小数で保持し、戻り値は表示上（整数）の変化量。
 // 知力が下がって装備枠が減った場合は、後ろに装備した魔法から外す（装備数が枠を超えないように）。
@@ -849,10 +849,10 @@ function fmtGain(obj) {
 // ===== 育成コマンド =====
 function failRate(s) { return clamp(Math.max(0, (s.fatigue - 50) * 1.6) + erosionPenalty(s).fail - (has(s, 'calm_mind') ? 5 : 0), 0, 80); }
 
-// ===== 侵食（禁術の学院のみ。SC.erosion が true のシナリオで使う） =====
+// ===== 侵食（禁術の魔法学院のみ。SC.erosion が true のシナリオで使う） =====
 // 0〜100。禁術儀式などプレイヤーの選択でだけ増え、時間経過では増えない。
 // リターンの大部分は儀式の報酬：侵食の段階が高いときに撃つ儀式ほど、能力上昇が大きい（ritual）。
-// 授業・研究の成長は本編の70%（EROSION_BASE_GROW）で、段階による成長バフ（grow）は控えめ。
+// 授業・研究の成長は星見の70%（EROSION_BASE_GROW）で、段階による成長バフ（grow）は控えめ。
 // 段階ペナルティ：休息の回復量が減り、全育成コマンドの失敗率が上がる。
 // 暴走ライン（通常100）に達すると暴走：能力の大幅低下・魔法の没収・マイナス特性「深淵の傷跡」（傷跡が深いほど暴走ラインが下がる）。
 const EROSION_BASE_GROW = 0.7;
@@ -865,7 +865,7 @@ const EROSION_TIERS = [   // min 以上で適用（上の段階ほど、儀式�
 // 儀式の報酬（能力上昇）の倍率：撃った時点の侵食の段階で決まる
 function ritualBonus(s) { const x = erosionTier(s); return x ? x.ritual : 1; }
 function erosionTier(s) { let r = null; if (SC.erosion) for (const x of EROSION_TIERS) if ((s.erosion || 0) >= x.min) r = x; return r; }
-// 授業・研究の成長倍率（本編は1。禁術の学院は 0.7 × 段階の成長バフ）
+// 授業・研究の成長倍率（星見は1。禁術の魔法学院は 0.7 × 段階の成長バフ）
 function erosionGrowth(s) { const x = erosionTier(s); return x ? EROSION_BASE_GROW * x.grow : 1; }
 function erosionPenalty(s) {
   const x = erosionTier(s); if (!x) return { rest: 0, fail: 0 };
@@ -1326,7 +1326,7 @@ function milestoneEvents(s, cid, fromSocial) {
   //        イベント → 餞別（固有の特性＋全ステータス＋得意ステータス）
   if (b >= 100 && !f['b100' + cid]) {
     const st = CHAR_STORY[cid];
-    if (c.group === 'event' && c.giftSpell) {   // 餞別の代わりに、禁術魔法を確実に伝授する（禁術の学院のヴェイン）
+    if (c.group === 'event' && c.giftSpell) {   // 餞別の代わりに、禁術魔法を確実に伝授する（禁術の魔法学院のヴェイン）
       const gs = SPELL[c.giftSpell];
       out.push(mkEvent(`${c.n}：禁術の伝授`, `${c.n}との絆が最大になった。\n${st.gift}`, [
         { label: '伝授を受ける', hint: `禁術魔法【${gs.n}】を確実に習得：${spellDesc(gs)}`, fn: s => {
@@ -1999,8 +1999,8 @@ const SCENARIOS = {};
 // 今週が告知の週なら、その試験の定義を返す
 function this_ex(s) { return SC.exams.find(e => s.turn === e.week - SC.announceWeeks + 1) || null; }
 SCENARIOS.main = {
-  id: 'main', name: '星見の魔法学院・本編', title: '星見の魔法学院', specialName: '夏合宿',
-  desc: '三年間、授業・研究・交流・休息を選び、卒業大会の頂点を目指す本編。',
+  id: 'main', name: '星見の魔法学院', title: '星見の魔法学院', specialName: '夏合宿',
+  desc: '三年間、授業・研究・交流・休息を選び、卒業大会の頂点を目指すシナリオ。',
   weeksPerMonth: 4, months: 36, startMonth: 4,
   // 試験・大会（週・名称・画面の説明文）
   exams: [
@@ -2073,7 +2073,7 @@ function mainFinalRank(s) {
 }
 
 
-// ===== 試験報酬（本編） =====
+// ===== 試験報酬（星見） =====
 function mainExamReward(s, key, won) {
   const L = [];
   const all = (v) => { const g = {}; for (const k of STATS) g[k] = gain(s, k, k === 'hp' ? v * 3 : v); return g; };
@@ -2092,9 +2092,9 @@ function mainExamReward(s, key, won) {
 }
 
 // =====================================================================
-//  シナリオ：禁術の学院
+//  シナリオ：禁術の魔法学院
 // ---------------------------------------------------------------------
-//  本編の育成の仕組みはそのまま使い、次を足す：
+//  星見の育成の仕組みはそのまま使い、次を足す：
 //    侵食（0〜100）… 禁術儀式などの選択でだけ増える。段階ペナルティと暴走（上の「侵食」の節）
 //    禁術儀式 ……… 新コマンド。侵食と引き換えに能力・魔法・特性をランダムに得る
 //    浄化 ………… 確定の回復手段はなし。月の変わり目の定期浄化（下がり幅5〜50）と、
@@ -2240,7 +2240,7 @@ const FORBIDDEN_STAR_EVENTS = {
     ], { char: 'lilith' }),
   ],
 };
-// 試験の報酬（本編と同じ効果で、文言だけ違う）
+// 試験の報酬（星見と同じ効果で、文言だけ違う）
 // 浄化の定期イベント：every か月ごと、月の変わり目（その月の第1週の始め）に必ず起きる。下がる量は浄化前の侵食に関係なく、幅を厚くとってある
 const BARRIER = { every: 2, amount: [5, 50] };
 function barrierDue(s) { const m = monthIdx(s.turn); return weekOf(s.turn) === 1 && m > 1 && (m - 1) % BARRIER.every === 0; }
@@ -2280,13 +2280,13 @@ function forbiddenEnding(s) {
   return { title: '深淵の王', text: `討伐隊は、闇に呑まれて消えた。侵食${e}――その力に、もはや誰も逆らえない。\n学院は守られた。ただし、あなたという新しい深淵の主のもとで。` };
 }
 SCENARIOS.forbidden = {
-  id: 'forbidden', name: '禁術の学院', title: '禁術の学院', specialName: '禁域の月',
+  id: 'forbidden', name: '禁術の魔法学院', title: '禁術の魔法学院', specialName: '禁域の月',
   desc: '禁術を学ぶ学院で三年間。侵食と引き換えに力を得る「禁術儀式」で成長し、最後は討伐隊から学院を守り抜く。',
   weeksPerMonth: 4, months: 36, startMonth: 4,
   origins: FORBIDDEN_ORIGINS, chars: FORBIDDEN_CHARS, charStory: FORBIDDEN_CHAR_STORY, starEvents: FORBIDDEN_STAR_EVENTS, groups: FORBIDDEN_GROUPS,
   affinityPool: ['dark', 'fire'], affinityChoice: true,   // 主適性は闇か火から選ぶ
   erosion: true, ritual: true,                            // 侵食と禁術儀式を使う
-  growMul: 1.0,                                           // 全体の成長（経験値）の倍率（侵食の段階の成長バフで差をつけるので、本編と同じ）
+  growMul: 1.0,                                           // 全体の成長（経験値）の倍率（侵食の段階の成長バフで差をつけるので、星見と同じ）
   exams: [
     { key: 'mid', week: 48, name: '1年目 実戦演習', short: '実戦演習', desc: '勝てば全能力上昇と特性を獲得', next: '2年目へ' },
     { key: 'sel', week: 96, name: '2年目 審問官迎撃', short: '審問官迎撃', desc: '勝てば防衛戦で先遣隊の相手を免除', next: '3年目へ' },
@@ -2299,7 +2299,7 @@ SCENARIOS.forbidden = {
   summary(s) { const reach = s.results.champion ? '防衛成功' : this.reachName[s.results.cupReached]; return `実戦演習 ${s.results.mid ? '突破' : '敗北'}／審問官迎撃 ${s.results.sel ? '撃退' : '敗北'}／防衛戦 ${reach}`; },
   // 各年の8月は「禁域の月」：休息で侵食が下がり、禁術儀式は報酬の抽選が4回（侵食の増え方は2倍）
   special(t) { return (monthIdx(t) - 1) % 12 === 4 ? { id: 'rite', name: '禁域の月', ritualMul: 2, ritualDraws: 4, restPurify: [10, 16], note: '禁域の月：休息で侵食が下がる・禁術儀式は報酬の抽選4回（侵食は2倍）' } : null; },
-  // 対戦相手：能力は本編と同じ（据え置き）。夏合宿がない分は、異端の教師ヴェインと禁術儀式で補う。審問官・討伐隊は光が多い
+  // 対戦相手：能力は星見と同じ（据え置き）。夏合宿がない分は、異端の教師ヴェインと禁術儀式で補う。審問官・討伐隊は光が多い
   opponents: {
     mid: { ...SCENARIOS.main.opponents.mid },
     sel: { ...SCENARIOS.main.opponents.sel, els: ['light', 'water'] },
@@ -2352,7 +2352,7 @@ function setScenario(id) {
   SC = SCENARIOS[id];
   ORIGINS = SC.origins || MAIN_ORIGINS; CHARS = SC.chars || MAIN_CHARS; CHAR_STORY = SC.charStory || MAIN_CHAR_STORY;
   STAR_EVENTS = SC.starEvents || MAIN_STAR_EVENTS; GROUPS = SC.groups || MAIN_GROUPS;
-  if (typeof document !== 'undefined' && document.body) document.body.classList.toggle('theme-forbidden', id === 'forbidden');   // 禁術の学院だけ闇の配色（ブラウザのみ）
+  if (typeof document !== 'undefined' && document.body) document.body.classList.toggle('theme-forbidden', id === 'forbidden');   // 禁術の魔法学院だけ闇の配色（ブラウザのみ）
   WPM = SC.weeksPerMonth; TOTAL = SC.months * WPM;
   EXAM_WEEK = Object.fromEntries(SC.exams.map(e => [e.key, e.week]));
 }
@@ -2725,7 +2725,7 @@ function tabBody() {
     <div class="tblwrap"><table class="sptbl gtbl" style="min-width:360px"><thead><tr><th>段階</th><th>侵食</th><th>儀式の能力上昇</th><th>授業・研究の成長</th><th>休息の回復</th><th>失敗率</th></tr></thead><tbody>
     ${EROSION_TIERS.map(x => { const on = erosionTier(s) === x; const m = has(s, 'abyss_temper') ? 0.5 : 1; return `<tr class="${on ? 'cur' : ''}"><td>${x.n}${on ? ' ◀いま' : ''}</td><td class="num">${x.min}〜</td><td class="num">×${x.ritual}</td><td class="num">×${+(EROSION_BASE_GROW * x.grow * (SC.growMul || 1)).toFixed(2)}</td><td class="num">${x.rest ? '-' + Math.round(x.rest * m) : '―'}</td><td class="num">${x.fail ? '+' + Math.round(x.fail * m) + '%' : '―'}</td></tr>`; }).join('')}
     </tbody></table></div>
-    <p class="note">禁術の学院では、能力の伸び全体が本編の${Math.round((SC.growMul || 1) * 100)}%で、授業・研究はさらに70%に抑えられます（表の倍率はこれらを掛けた値）。侵食が高い段階で撃つ儀式ほど能力上昇が大きくなりますが、儀式を撃つたびに侵食は暴走ラインに近づき、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。暴走ライン（通常100）に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（暴走ラインが96→92に下がる）。侵食が下がるのは、禁域の月の休息だけです。また${BARRIER.every > 1 ? BARRIER.every + 'か月ごとの' : '毎月の'}月の変わり目には、学院の結界によって必ず浄化されます（侵食-${BARRIER.amount[0]}〜${BARRIER.amount[1]}、どれだけ下がるかは読めません）。</p>` : ''}
+    <p class="note">禁術の魔法学院では、能力の伸び全体が星見の${Math.round((SC.growMul || 1) * 100)}%で、授業・研究はさらに70%に抑えられます（表の倍率はこれらを掛けた値）。侵食が高い段階で撃つ儀式ほど能力上昇が大きくなりますが、儀式を撃つたびに侵食は暴走ラインに近づき、休息と失敗率のペナルティも重くなります。侵食は禁術儀式（小儀式・大儀式）で増え、時間では増えません。暴走ライン（通常100）に達すると暴走し、能力が大きく下がって魔法を1つ失い、マイナス特性【深淵の傷跡】が刻まれます（暴走ラインが96→92に下がる）。侵食が下がるのは、禁域の月の休息だけです。また${BARRIER.every > 1 ? BARRIER.every + 'か月ごとの' : '毎月の'}月の変わり目には、学院の結界によって必ず浄化されます（侵食-${BARRIER.amount[0]}〜${BARRIER.amount[1]}、どれだけ下がるかは読めません）。</p>` : ''}
     <h3 style="margin:18px 0 8px;font-size:15px">習得に挑戦中</h3>
     ${s.pending.length ? `<div class="plist">${s.pending.map(a => `<div>${a.kind === 'passive' ? '特性' : '魔法'}【${a.kind === 'passive' ? PASSIVES[a.id].n : SPELL[a.id].n}】<span>コツLv${a.fails}・現在の成功率${Math.round(attemptRate(s, a) * 100)}%${a.src && CHARS[a.src] ? `・${CHARS[a.src].n}と交流すると再挑戦しやすい` : ''}</span></div>`).join('')}</div>` : '<p class="note">習得に失敗した特性や魔法は、ここに残り、あとで再挑戦できます。失敗するたびに成功しやすくなります。</p>'}
     <h3 style="margin:18px 0 8px;font-size:15px">関係の壁</h3>
