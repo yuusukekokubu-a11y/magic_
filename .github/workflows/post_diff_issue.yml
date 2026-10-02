@@ -17,11 +17,13 @@ jobs:
       - name: Create Diff Issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 日本語の件名を文字単位で切るため（バイト単位で切ると文字化けする）
+          LC_ALL: C.UTF-8
         run: |
           # 最新の変更差分を取得（初回などで差分がない場合のエラーも回避）
           git diff HEAD~1 > diff.txt 2>/dev/null || echo "変更差分がありません、または初回コミットです。" > diff.txt
 
-          # Gemini に貼り付けやすい本文を作る：変更の要約（commit message）・変更ファイル一覧・差分
+          # レビュー依頼にそのまま貼りやすい本文を作る：変更の要約（commit message）・変更ファイル一覧・差分
           # 差分はコードブロックで囲み（Markdown として崩れないように）、Issue 本文の上限（約65,000字）を超えないよう切り詰める
           {
             echo "対象 commit: ${GITHUB_SHA}"
@@ -42,5 +44,24 @@ jobs:
             fi
           } > body.md
 
+          # タイトル：「📝 {最新コミットの件名}[ ほかN件] ({短いSHA})」
+          # 件名は変数に入れて必ず "" で囲む（引用符・バッククォート・$ を含んでもシェルが壊れないように）
+          subjects=$(git log --no-merges --format='%s' HEAD~1..HEAD 2>/dev/null || true)
+          if [ -n "$subjects" ]; then
+            summary="${subjects%%$'\n'*}"
+            count=$(printf '%s\n' "$subjects" | wc -l)
+          else
+            # 範囲が空（手動実行など）のときは HEAD の件名を使う
+            summary=$(git log -1 --format='%s' HEAD)
+            count=1
+          fi
+          if [ "${#summary}" -gt 60 ]; then
+            summary="${summary:0:60}…"
+          fi
+          if [ "$count" -gt 1 ]; then
+            summary="${summary} ほか$((count - 1))件"
+          fi
+          title="📝 ${summary} (${GITHUB_SHA:0:7})"
+
           # Issueを作成して差分を投稿
-          gh issue create --title "📝 最新の変更差分 (Gemini壁打ち用)" --body-file body.md
+          gh issue create --title "$title" --body-file body.md
